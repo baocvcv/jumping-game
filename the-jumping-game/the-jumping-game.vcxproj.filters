@@ -27,12 +27,42 @@
     <ClInclude Include="the-jumping-game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Button.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Hero.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="the-jumping-game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Menu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Button.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Hero.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -46,6 +76,33 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="the-jumping-game.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\start.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\space_bkg.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\astronaut.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\obj_element.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bg_forest.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\texture_1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\texture_2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\hero.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

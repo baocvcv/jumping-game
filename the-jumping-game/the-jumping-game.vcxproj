@@ -147,12 +147,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Button.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="Hero.h" />
+    <ClInclude Include="Map.h" />
+    <ClInclude Include="Menu.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="the-jumping-game.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Button.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Hero.cpp" />
+    <ClCompile Include="Map.cpp" />
+    <ClCompile Include="Menu.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -165,6 +175,15 @@
     <ResourceCompile Include="the-jumping-game.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\resources\astronaut.bmp" />
+    <Image Include="..\resources\bg_forest.bmp" />
+    <Image Include="..\resources\bitmap1.bmp" />
+    <Image Include="..\resources\hero.bmp" />
+    <Image Include="..\resources\obj_element.bmp" />
+    <Image Include="..\resources\space_bkg.bmp" />
+    <Image Include="..\resources\start.bmp" />
+    <Image Include="..\resources\texture_1.bmp" />
+    <Image Include="..\resources\texture_2.bmp" />
     <Image Include="small.ico" />
     <Image Include="the-jumping-game.ico" />
   </ItemGroup>
