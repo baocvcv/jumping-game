@@ -37,8 +37,6 @@ extern int Perimiter[PERIMITER_SIZE][2];
 
 */
 
-//TODO: switch maps
-//TODO: static trap
 //TODO: cui ruo brick
 
 class StartPos{
@@ -55,11 +53,13 @@ public:
 	void setId(int _id) { id = _id; }
 
 	// manipulate hero
-	void keyEvent() { hero.keyEvent(); }
-	void resetHero();
+	void keyEvent(int _key, bool pressed) { hero.keyEvent(_key, pressed); }
+	void resetHero(bool flag);
 
-	void update();
+	void resetMap();
+	int update(); // returns the next map to be rendered
 	void render(HDC bmp_buffer, HDC hdc_loadbmp);
+	bool isAnimationFinished() { return true; }
 	~Map();
 
 private:
@@ -78,11 +78,9 @@ private:
 
 	// status
 	int cameraX, cameraY;
-	Speed cameraSpeed;
-
 	bool mapNeedRefresh;
 
-	void collision_test(); // test collide
+	int collision_test(); // test collide, returns actions
 	void camera_move(); // moves the camera with the hero
 	void render_map(HDC);
 
@@ -90,7 +88,7 @@ private:
 	int whichBoundary(); // what does this do?
 	bool isPointInsideBox(Coordinates point, Coordinates box); // check if point in a box
 	double calcDist(Coordinates point, Speed direction); // distance according to speed
-	bool isAgainstWall(int direction); // up right down left
+	std::vector<int> isAgainstWall(int direction); // up right down left
 
 	bool coordinateInMap(int x, int y); // checks if coordinates are in map data
 };
@@ -100,11 +98,4 @@ map file:
 -mapwidth, mapheight, NumofRestartPos(with the first being the starting pos)
 -(NumOfRestartPos)rows: Restart pos
 -map data
-*/
-
-/*
-tile info:
-
-
-
 */

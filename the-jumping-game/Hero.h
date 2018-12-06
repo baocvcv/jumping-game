@@ -1,12 +1,13 @@
 #pragma once
 
 #include "the-jumping-game.h"
+#include "Rope.h"
 
 #define HERO_SPEED_X	6.0
-#define HERO_SPEED_Y	15.0
+#define HERO_SPEED_Y	18.0
 #define HERO_JUMP_SPEED 18.0
 #define HERO_GRAVITY	1.0
-#define HERO_ACCELX		2.0
+#define HERO_ACCELX		1.0
 
 #define HERO_BMP_WIDTH  115
 #define HERO_BMP_HEIGHT 200
@@ -18,6 +19,7 @@ extern int Nodes_Hero[BORDER_POINT_NUM][2];
 extern int Borders_Hero[4][BORDER_POINT_NUM / 4 + 1];
 
 //TODO: animation of all kinds
+//TODO: hero ability - rope
 class Hero
 {
 public:
@@ -26,8 +28,8 @@ public:
 
 	// change status
 	void reset(int x, int y);
-	void setPos(int x, int y) { posX = x; posY = y; }
-	void setSpeed(int vx, int vy) { speedX = vx * HERO_SPEED_X; speedY = vy * HERO_SPEED_Y; }
+	void setPos(int x, int y) { posX = x; posY = y; rope.setStartPos(x+HERO_WIDTH, y+HERO_HEIGHT/3); }
+	void setSpeed(int vx, int vy) { speedX = vx * HERO_SPEED_X; speedY = vy * HERO_SPEED_Y;}
 	void setSpeedX(int vx) { speedX = vx * HERO_SPEED_X; }
 	void setSpeedY(int vy) { speedY = vy * HERO_SPEED_Y; }
 	void die(int how);
@@ -47,11 +49,13 @@ public:
 	void setImg(HBITMAP _img) { img = _img; }
 
 	// events
-	void keyEvent();
+	void keyEvent(int _key, bool pressed);
 	void update();
 	void render(HDC bmp_buffer, HDC hdc_loadbmp, int cameraX, int cameraY);
 
 	~Hero();
+
+	Rope rope;
 
 private:
 	HBITMAP img;

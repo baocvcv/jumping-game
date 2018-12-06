@@ -12,6 +12,7 @@ Button::Button(int _id , HBITMAP _bmp_Button)
 	height = BUTTON_HEIGHT;
 	isVisible = false;
 	isHoveredOn = false;
+	isAnimated = false;
 }
 
 bool Button::isHovered(int mouseX, int mouseY) {
@@ -39,14 +40,47 @@ void Button::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 		frame = FRAME_FOCUS;
 
 	SelectObject(hdc_loadbmp, bmp_Button);
+
+	int x = posX;
+	int y = posY;
+	int wid = width;
+	int hei = height;
+	if (isAnimated) {
+		if (isReversed) {
+			x = posX - (posX - fromX) * frame_count / totalFrames;
+			y = posY - (posY - fromY) * frame_count / totalFrames;
+			double r = 1.0 - (1.0 - ratioStart) * frame_count / totalFrames;
+			wid = width * r;
+			hei = height * r;
+		}
+		else {
+			x = fromX + (posX - fromX) * frame_count / totalFrames;
+			y = fromY + (posY - fromY) * frame_count / totalFrames;
+			double r = ratioStart + (1.0 - ratioStart) * frame_count / totalFrames;
+			wid = width * r;
+			hei = height * r;
+		}
+		frame_count++;
+		if (frame_count > totalFrames) {
+			isAnimated = false;
+		}
+	}
 	TransparentBlt(
-		bmp_buffer, posX, posY,
-		width, height,
+		bmp_buffer, x, y, wid, hei,
 		hdc_loadbmp, 0, BUTTON_HEIGHT*frame, BUTTON_WIDTH, BUTTON_HEIGHT,
 		RGB(255, 255, 255)
 	);
 }
 
+void Button::animate(int _fromX, int _fromY, int _totalFrames, double _ratio, bool _reverse) {
+	isAnimated = true;
+	frame_count = 0;
+	fromX = _fromX;
+	fromY = _fromY;
+	totalFrames = _totalFrames;
+	ratioStart = _ratio;
+	isReversed = _reverse;
+}
 
 Button::~Button()
 {

@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "Hero.h"
 
+#include <cmath>
+
+#define DIST(x,y) (pow(x*x+y*y, 0.5))
+
 int Nodes_Hero[BORDER_POINT_NUM][2] = {
 	{0,0},{HERO_WIDTH / 5, 0},{HERO_WIDTH * 2 / 5, 0},{HERO_WIDTH * 3 / 5, 0},{HERO_WIDTH * 4 / 5, 0},
 	{HERO_WIDTH-1,0},{HERO_WIDTH - 1, HERO_HEIGHT / 5}, {HERO_WIDTH - 1, HERO_HEIGHT * 2 / 5},{HERO_WIDTH - 1, HERO_HEIGHT * 3 / 5},{HERO_WIDTH - 1, HERO_HEIGHT * 4 / 5},
@@ -26,10 +30,8 @@ Hero::Hero(int _posX, int _posY, HBITMAP _img) {
 
  /* change status */
 void Hero::reset(int x, int y) {
-	posX = x;
-	posY = y;
-	speedX = 0;
-	speedY = 0;
+	setPos(x, y);
+	setSpeed(0, 0);
 
 	inAir = true;
 	whatWall = 0;
@@ -74,26 +76,26 @@ std::vector<std::pair<int, int>> Hero::getBorderNodes(int _border) {
 }
 
 /* events */
-void Hero::keyEvent() {
-	if (key_status[VK_UP] && !key_status[VK_DOWN]) { // press up key
-		if (!inAir) {
-			regularJump();
+void Hero::keyEvent(int _key, bool pressed) {
+	if (pressed) {
+		switch (_key) {
+		case 'C':
+			if(!inAir)
+				regularJump();
+			break;
+		case 'X':
+			if (!rope.isUsed) {
+				Speed dir;
+				dir.first = 0.0; dir.second = 0.0;
+				if (key_status[VK_UP]) dir.second -= 1.0;
+				if (key_status[VK_DOWN]) dir.second += 1.0;
+				if (key_status[VK_LEFT]) dir.first -= 1.0;
+				if (key_status[VK_RIGHT]) dir.first += 1.0;
+				double d = DIST(dir.first, dir.second);
+				dir.first /= d; dir.second /= d;
+				rope.useRope(dir);
+			}
 		}
-	}
-	else if (!key_status[VK_UP] && key_status[VK_DOWN]) { // press down key
-		
-	}
-	else {
-
-	}
-	if (key_status[VK_LEFT] && !key_status[VK_RIGHT]) { // press left key
-		
-	}
-	else if (!key_status[VK_LEFT] && key_status[VK_RIGHT]) { // press right key
-		
-	}
-	else {
-		
 	}
 }
 
@@ -125,9 +127,7 @@ void Hero::update() {
 	}
 
 	// position
-	posX += (int)speedX;
-	posY += (int)speedY;
-
+	setPos(posX+(int)speedX, posY+(int)speedY);
 }
 
 void Hero::render(HDC bmp_buffer, HDC hdc_loadbmp, int cameraX, int cameraY) {

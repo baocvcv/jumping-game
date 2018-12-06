@@ -57,27 +57,21 @@ Map::Map(int _id)
 	}
 
 	// set camera & load hero
-	int cameraNX = startPosList[0].mapX; 
-	int cameraNY = startPosList[0].mapY;
-	cameraX = cameraNX * TILE_DIM;  cameraY = cameraNY * TILE_DIM;
-	cameraSpeed.first = 0.0; cameraSpeed.second = 0.0;
 	mapNeedRefresh = true;
-
-	int posX = startPosList[0].heroX * TILE_DIM;
-	int posY = startPosList[0].heroY * TILE_DIM - HERO_HEIGHT;
-	hero.setPos(posX, posY);
-	heroPos = make_pair(posX, posY);
+	resetHero(false);
 }
 
-void Map::resetHero() {
-	Coordinates heroPos = hero.getPos();
-	double dist = DIST(heroPos.first - startPosList[0].heroX*TILE_DIM, heroPos.second - startPosList[0].heroY*TILE_DIM+HERO_HEIGHT);
+void Map::resetHero(bool flag) {
 	int n = 0;
-	for (unsigned int i = 1; i < startPosList.size(); i++) {
-		double tmp = DIST(heroPos.first - startPosList[i].heroX*TILE_DIM, heroPos.second - startPosList[i].heroY*TILE_DIM + HERO_HEIGHT);
-		if (tmp < dist) {
-			dist = tmp;
-			n = i;
+	if (flag) {
+		heroPos = hero.getPos();
+		double dist = DIST(heroPos.first - startPosList[0].heroX*TILE_DIM, heroPos.second - startPosList[0].heroY*TILE_DIM+HERO_HEIGHT);
+		for (unsigned int i = 1; i < startPosList.size(); i++) {
+			double tmp = DIST(heroPos.first - startPosList[i].heroX*TILE_DIM, heroPos.second - startPosList[i].heroY*TILE_DIM + HERO_HEIGHT);
+			if (tmp < dist) {
+				dist = tmp;
+				n = i;
+			}
 		}
 	}
 	cameraX = startPosList[n].mapX * TILE_DIM; 
@@ -88,13 +82,19 @@ void Map::resetHero() {
 	heroPos = make_pair(posX, posY);
 }
 
-void Map::collision_test() {
+void Map::resetMap() {
+	resetHero(false);
+}
+
+/* actions:
+0-nothing 1-dies 2-go to stage select
+*/
+int Map::collision_test() {
 	heroPos = hero.getPos();  // relative coordinate to camera
 
 	// test if on map boundary
 	if (isHeroOutOfBounds()) {
-		resetHero();
-		return;
+		return 1;
 	}
 	/*
 	switch (whichBoundary())
@@ -110,6 +110,7 @@ void Map::collision_test() {
 	std::vector<Coordinates> border = hero.getBorderNodes(4);
 	std::vector<Coordinates> nearbySquares; // relative to camera
 	Speed heroSpeed = hero.getSpeed();
+	std::map<int, bool> touchingTiles; // record what tiles have been touched
 
 	double dist = 0.0;
 	for (unsigned int j = 0; j < border.size(); j++) {
@@ -117,6 +118,7 @@ void Map::collision_test() {
 		int yy = border[j].second/TILE_DIM;
 		if (xx >= 0 && xx < mapWidth && yy >= 0 && yy < mapHeight) {
 			if (stageMap[yy][xx] > 0){
+				touchingTiles[stageMap[yy][xx]] = true;
 				int x = border[j].first % TILE_DIM;
 				int y = border[j].second % TILE_DIM;
 				double d = calcDist(std::make_pair(x, y), heroSpeed);
@@ -126,7 +128,9 @@ void Map::collision_test() {
 			}
 		}
 	}
+
 	
+
 	// move back
 	if (dist > 0.0) {
 		double d = pow(heroSpeed.first*heroSpeed.first + heroSpeed.second*heroSpeed.second, 0.5);
@@ -140,25 +144,41 @@ void Map::collision_test() {
 		}
 	}
 
+
 	// set hero status according to relationship with objects
-	if (isAgainstWall(0)) {
+	vector<int> res = isAgainstWall(0);
+	if (res.size() > 0) { //up
 		hero.setSpeedY(0);
+		for (int i = 0; i < res.size(); i++) if (res[i] == 14 || res[i] == 12 || res[i] == 13) return 1;
 	}
-	if (isAgainstWall(2)) {
+
+	res = isAgainstWall(2);
+	if (res.size() > 0) { //down
 		hero.onGround(true);
+		for (int i = 0; i < res.size(); i++) if (res[i] == 11 || res[i] == 12 || res[i] == 13) return 1;
 	}
-	else {
-		hero.onGround(false);
-	}
-	if (isAgainstWall(1)) {
+	else hero.onGround(false);
+
+	res = isAgainstWall(1);
+	if (res.size() > 0) { //right
 		hero.hitVerticalWall(1);
-	}
-	else if (isAgainstWall(3)) {
-		hero.hitVerticalWall(-1);
+		for (int i = 0; i < res.size(); i++) if (res[i] == 12 || res[i] == 11 || res[i] == 14) return 1;
 	}
 	else {
-		hero.hitVerticalWall(0);
+		res = isAgainstWall(3);
+		if (res.size() > 0) { //left
+			hero.hitVerticalWall(-1);
+			for (int i = 0; i < res.size(); i++) if (res[i] == 13 || res[i] == 11 || res[i] == 14) return 1;
+		}
+		else hero.hitVerticalWall(0);
 	}
+
+	// handle special tiles that have been touched
+	if (touchingTiles[39]) {} // some map animation
+	if (touchingTiles[22]) return 2; // go back to stage select
+	if (touchingTiles[10]) return 1; // restart stage
+
+	return 0;
 }
 
 void Map::camera_move() {
@@ -181,22 +201,33 @@ void Map::camera_move() {
 	}
 
 	// direction y, moves with hero, stops at border and camera blocks
-	if (relativeY <= sceneHeight * TILE_DIM * 3 / 7 && heroSpeed.second < 0.0) {
+	if (relativeY <= sceneHeight * TILE_DIM * 1/6 && heroSpeed.second < 0.0) {
 		cameraY += int(heroSpeed.second);
 		if (cameraY < TILE_DIM)
 			cameraY = TILE_DIM;
 	}
-	else if (relativeY >= sceneHeight * TILE_DIM * 4 / 7 && heroSpeed.second > 0.0) {
+	else if (relativeY >= sceneHeight * TILE_DIM * 5/6 && heroSpeed.second > 0.0) {
 		cameraY += int(heroSpeed.second);//heroPos.second - sceneHeight * TILE_DIM * 3 / 5;
 		if (cameraY > (mapHeight - sceneHeight - 1)*TILE_DIM)
 			cameraY = (mapHeight - sceneHeight - 1)*TILE_DIM;
 	}
 }
 
-void Map::update() {
+int Map::update() {
 	hero.update();
-	collision_test();
+	int action = collision_test();
 	camera_move();
+
+	switch (action) {
+	case 0:
+		return id;
+	case 1: // die
+		resetHero(true);
+		return id;
+	case 2:
+		return MENU_SELECT_STAGE;
+	}
+	return id;
 }
 
 void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
@@ -353,9 +384,10 @@ double Map::calcDist(Coordinates point, Speed direction) {
 	return dist;
 }
 
-bool Map::isAgainstWall(int direction) {
+std::vector<int> Map::isAgainstWall(int direction) {
 	vector<Coordinates> borderNodes = hero.getBorderNodes(direction);
 	int increment[4][2] = { {0,-1},{1,0},{0,1},{-1,0} };
+	vector<int> res;
 
 	for (unsigned int i = 0; i < borderNodes.size(); i++) {
 		int x = borderNodes[i].first;
@@ -367,11 +399,11 @@ bool Map::isAgainstWall(int direction) {
 		
 		if (coordinateInMap(xx1, yy1) && coordinateInMap(xx2, yy2)) {
 			if (stageMap[yy1][xx1] == 0 && stageMap[yy2][xx2] > 0) {
-				return true;
+				res.push_back(stageMap[yy2][xx2]);
 			}
 		}
 	}
-	return false;
+	return res;
 }
 
 bool Map::coordinateInMap(int x, int y) {
@@ -380,4 +412,3 @@ bool Map::coordinateInMap(int x, int y) {
 	}
 	return false;
 }
-

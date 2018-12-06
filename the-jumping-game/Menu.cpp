@@ -19,13 +19,44 @@ Menu::Menu(HBITMAP _bmp_Background, int menuInfo[MAX_BUTTONS_PER_MENU][3]) {
 		button.setVisible(true);
 		buttons.push_back(button);
 	}
+
+	animation_type = 0; // no animation
+}
+
+void Menu::setParentMap(int _mapId) {
+	parentMap = _mapId;
+	button_action[BUTTON_RESUME_GAME] = parentMap + 1 * 1000;
+	button_action[BUTTON_RESTART_STAGE] = parentMap + 2 * 1000;
 }
 
 void Menu::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 	SelectObject(hdc_loadbmp, bmp_Background);
 	BitBlt(bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,hdc_loadbmp, 0, 0, SRCCOPY);
+
 	for (unsigned int i = 0; i < buttons.size(); i++) {
 		buttons[i].render(bmp_buffer, hdc_loadbmp);
+	}
+}
+
+void Menu::animate(int whatAnimation) {
+	animation_type = whatAnimation;
+	double ratio = 0.3;
+	switch (animation_type) {
+	case 1:
+		for (unsigned int i = 0; i < buttons.size(); i++) {
+			int x = buttons[i].getX();
+			int y = buttons[i].getY();
+			//buttons[i].animate(x, y, MENU_ANIMATION_LEN, 0.5);  // effect 1
+			buttons[i].animate(x+(1-ratio)*BUTTON_WIDTH/2, y+100, BUTTON_ANIMATION_LEN+i*5, ratio, false); // effect 2
+		}
+		break;
+	case 2:
+		for (unsigned int i = 0; i < buttons.size(); i++) {
+			int x = buttons[i].getX();
+			int y = buttons[i].getY();
+			buttons[i].animate(x + (1 - ratio)*BUTTON_WIDTH / 2, y + 100, BUTTON_ANIMATION_LEN, ratio, true); // effect 2
+		}
+		break;
 	}
 }
 

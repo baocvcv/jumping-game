@@ -30,5 +30,9 @@ public:
 //private:
 	map<int, Menu> menus;
 	map<int, Map> maps;
+
+	int lastSceneId;
+	bool exitAnimationOn;
+
 	void switchScene(int sceneId);
 };
