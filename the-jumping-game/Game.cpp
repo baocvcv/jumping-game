@@ -39,18 +39,28 @@ void Game::mouseEvent(int _x, int _y, bool isClick) {
 	mouseX = _x;
 	mouseY = _y;
 
+	static int button_id = -1;
 	if (currentSceneId < 10) {
 		if (!mouseLeftButtonDown && isClick) {
-			int id = menus[currentSceneId].eventMouseLeftClick(mouseX, mouseY);
-			if (id != -1) {
-				switchScene(id);
-			}
+			button_id = menus[currentSceneId].eventMouseLeftDown(mouseX, mouseY);
 		}
-		else {
-			menus[currentSceneId].eventMouseMove(mouseX, mouseY);
+		else if (mouseLeftButtonDown && !isClick) {
+			int id2 = menus[currentSceneId].eventMouseLeftUp(mouseX, mouseY);
+			if (button_id != -1 && button_id == id2) {
+				switchScene(button_id);
+				button_id = -1;
+			}
 		}
 	}
 	mouseLeftButtonDown = isClick;
+}
+
+void Game::mouseMove(int _x, int _y) {
+	mouseX = _x;
+	mouseY = _y;
+
+	if(currentSceneId < 10)
+		menus[currentSceneId].eventMouseMove(mouseX, mouseY);
 }
 
 void Game::keyEvent(int key, bool pressed) {

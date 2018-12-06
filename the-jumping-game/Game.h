@@ -21,7 +21,8 @@ public:
 	void update(); // timer event, asks map to update itself
 	void render(HDC bmp_buffer, HDC hdc_loadbmp); // called by paint() in main
 
-	void mouseEvent(int x, int y, bool isClick);
+	void mouseEvent(int x, int y, bool isDown);
+	void mouseMove(int x, int y);
 	void keyEvent(int key, bool pressed);
 	
 	int currentSceneId; // 0~99 is menu, 100-199 is game stage
@@ -29,5 +30,5 @@ public:
 //private:
 	map<int, Menu> menus;
 	map<int, Map> maps;
-	void switchScene(int sceneId);	
+	void switchScene(int sceneId);
 };

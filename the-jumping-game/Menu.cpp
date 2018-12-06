@@ -35,8 +35,19 @@ void Menu::eventMouseMove(int x, int y) {
 	}
 }
 
-int Menu::eventMouseLeftClick(int x, int y) {
+int Menu::eventMouseLeftDown(int x, int y) {
 	for (unsigned int i = 0; i < buttons.size(); i++) {
+		if (buttons[i].isHovered(x, y)) {
+			buttons[i].setClicked(true);
+			return button_action[buttons[i].id()];
+		}
+	}
+	return -1;
+}
+
+int Menu::eventMouseLeftUp(int x, int y) {
+	for (unsigned int i = 0; i < buttons.size(); i++) {
+		buttons[i].setClicked(false);
 		if (buttons[i].isHovered(x, y)) {
 			return button_action[buttons[i].id()];
 		}

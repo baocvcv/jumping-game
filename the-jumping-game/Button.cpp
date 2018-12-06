@@ -32,11 +32,17 @@ void Button::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 	if (!isVisible) {
 		return;
 	}
+	int frame = 0;
+	if (isClicked && isHoveredOn)
+		frame = FRAME_CLICK;
+	else if (isHoveredOn)
+		frame = FRAME_FOCUS;
+
 	SelectObject(hdc_loadbmp, bmp_Button);
 	TransparentBlt(
 		bmp_buffer, posX, posY,
 		width, height,
-		hdc_loadbmp, 0, BUTTON_HEIGHT*(int)isHoveredOn, BUTTON_WIDTH, BUTTON_HEIGHT,
+		hdc_loadbmp, 0, BUTTON_HEIGHT*frame, BUTTON_WIDTH, BUTTON_HEIGHT,
 		RGB(255, 255, 255)
 	);
 }

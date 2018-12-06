@@ -3,20 +3,21 @@
 #include "the-jumping-game.h"
 
 #define HERO_SPEED_X	6.0
-#define HERO_SPEED_Y	20.0
-#define HERO_JUMP_SPEED 20.0
-#define HERO_GRAVITY	2.0
-#define HERO_ACCELX		1.0
+#define HERO_SPEED_Y	15.0
+#define HERO_JUMP_SPEED 18.0
+#define HERO_GRAVITY	1.0
+#define HERO_ACCELX		2.0
 
 #define HERO_BMP_WIDTH  115
 #define HERO_BMP_HEIGHT 200
-#define HERO_WIDTH		35
-#define HERO_HEIGHT		60
-#define BORDER_POINT_NUM 12
+#define HERO_WIDTH		38
+#define HERO_HEIGHT		70
+#define BORDER_POINT_NUM 20
 
 extern int Nodes_Hero[BORDER_POINT_NUM][2];
 extern int Borders_Hero[4][BORDER_POINT_NUM / 4 + 1];
 
+//TODO: animation of all kinds
 class Hero
 {
 public:
@@ -29,6 +30,7 @@ public:
 	void setSpeed(int vx, int vy) { speedX = vx * HERO_SPEED_X; speedY = vy * HERO_SPEED_Y; }
 	void setSpeedX(int vx) { speedX = vx * HERO_SPEED_X; }
 	void setSpeedY(int vy) { speedY = vy * HERO_SPEED_Y; }
+	void die(int how);
 
 	void onGround(bool isOn); // set status to if on the ground
 	void hitVerticalWall(int _whatWall); // hits vertical wall
@@ -47,13 +49,13 @@ public:
 	// events
 	void keyEvent();
 	void update();
-	void render(HDC bmp_buffer, HDC hdc_loadbmp);
+	void render(HDC bmp_buffer, HDC hdc_loadbmp, int cameraX, int cameraY);
 
 	~Hero();
 
 private:
 	HBITMAP img;
-	int posX, posY;
+	long posX, posY;
 	int width, height;
 
 	bool inAir;

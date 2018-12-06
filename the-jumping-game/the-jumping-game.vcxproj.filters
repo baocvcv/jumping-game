@@ -81,28 +81,37 @@
     <Image Include="..\resources\start.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\resources\space_bkg.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="..\resources\astronaut.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="..\resources\obj_element.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="..\resources\bg_forest.bmp">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="..\resources\texture_1.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\resources\texture_2.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="..\resources\bitmap1.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="..\resources\hero.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_menu.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_back.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_continue.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_play.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_restart.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_tutorial.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bitmap8.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_map.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

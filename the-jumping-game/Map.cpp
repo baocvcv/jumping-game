@@ -57,27 +57,33 @@ Map::Map(int _id)
 	}
 
 	// set camera & load hero
-	cameraX = startPosList[0].mapX;
-	cameraY = startPosList[0].mapY;
-	int posX = (startPosList[0].heroX - cameraX)*TILE_DIM;
-	int posY = (startPosList[0].heroY - cameraY)*TILE_DIM - HERO_HEIGHT;
+	int cameraNX = startPosList[0].mapX; 
+	int cameraNY = startPosList[0].mapY;
+	cameraX = cameraNX * TILE_DIM;  cameraY = cameraNY * TILE_DIM;
+	cameraSpeed.first = 0.0; cameraSpeed.second = 0.0;
+	mapNeedRefresh = true;
+
+	int posX = startPosList[0].heroX * TILE_DIM;
+	int posY = startPosList[0].heroY * TILE_DIM - HERO_HEIGHT;
 	hero.setPos(posX, posY);
 	heroPos = make_pair(posX, posY);
 }
 
 void Map::resetHero() {
 	Coordinates heroPos = hero.getPos();
-	double dist = DIST(heroPos.first - startPosList[0].heroX, heroPos.second - startPosList[0].heroY);
+	double dist = DIST(heroPos.first - startPosList[0].heroX*TILE_DIM, heroPos.second - startPosList[0].heroY*TILE_DIM+HERO_HEIGHT);
 	int n = 0;
 	for (unsigned int i = 1; i < startPosList.size(); i++) {
-		double tmp = DIST(heroPos.first - startPosList[i].heroX, heroPos.second - startPosList[i].heroY);
+		double tmp = DIST(heroPos.first - startPosList[i].heroX*TILE_DIM, heroPos.second - startPosList[i].heroY*TILE_DIM + HERO_HEIGHT);
 		if (tmp < dist) {
 			dist = tmp;
 			n = i;
 		}
 	}
-	int posX = (startPosList[n].heroX - cameraX)*TILE_DIM;
-	int posY = (startPosList[n].heroY - cameraY)*TILE_DIM - HERO_HEIGHT;
+	cameraX = startPosList[n].mapX * TILE_DIM; 
+	cameraY = startPosList[n].mapY * TILE_DIM;
+	int posX = startPosList[n].heroX*TILE_DIM;
+	int posY = startPosList[n].heroY*TILE_DIM - HERO_HEIGHT;
 	hero.reset(posX, posY);
 	heroPos = make_pair(posX, posY);
 }
@@ -90,6 +96,7 @@ void Map::collision_test() {
 		resetHero();
 		return;
 	}
+	/*
 	switch (whichBoundary())
 	{
 	case 0:
@@ -97,84 +104,43 @@ void Map::collision_test() {
 		return;
 	default:
 		break;
-	}
+	}*/
 
 	//test if collides
 	std::vector<Coordinates> border = hero.getBorderNodes(4);
 	std::vector<Coordinates> nearbySquares; // relative to camera
 	Speed heroSpeed = hero.getSpeed();
 
-	int heroSquareX = (heroPos.first + HERO_WIDTH/2) / TILE_DIM; // relative to camera
-	int heroSquareY = (heroPos.second + HERO_HEIGHT/2) / TILE_DIM;
-	for (int i = 0; i < PERIMITER_SIZE; i++) {
-		nearbySquares.push_back(std::make_pair(heroSquareX + Perimiter[i][0], heroSquareY + Perimiter[i][1]));
-	}
-	int deepestPoint = 0;
-	int deepestBox;
 	double dist = 0.0;
-	for (int i = 0; i < PERIMITER_SIZE; i++) {
-		int xx = nearbySquares[i].first + cameraX;
-		int yy = nearbySquares[i].second + cameraY;
-
+	for (unsigned int j = 0; j < border.size(); j++) {
+		int xx = border[j].first/TILE_DIM;
+		int yy = border[j].second/TILE_DIM;
 		if (xx >= 0 && xx < mapWidth && yy >= 0 && yy < mapHeight) {
-			if (stageMap[yy][xx] == 0) continue;
-			for (unsigned int j = 0; j < border.size(); j++) {
-				if (isPointInsideBox(border[j], nearbySquares[i])) {
-					int x = border[j].first - nearbySquares[i].first * TILE_DIM;
-					int y = border[j].second - nearbySquares[i].second * TILE_DIM;
-					double d = calcDist(std::make_pair(x, y), heroSpeed);
-					if (d > dist) {
-						dist = d;
-						deepestPoint = j;
-						deepestBox = i;
-					}
+			if (stageMap[yy][xx] > 0){
+				int x = border[j].first % TILE_DIM;
+				int y = border[j].second % TILE_DIM;
+				double d = calcDist(std::make_pair(x, y), heroSpeed);
+				if (d > dist) {
+					dist = d;
 				}
 			}
 		}
 	}
-
-	double d = pow(heroSpeed.first*heroSpeed.first + heroSpeed.second*heroSpeed.second, 0.5);
-	double cos = heroSpeed.first / d;
-	double sin = heroSpeed.second / d;
-	int newPosX = heroPos.first - int(dist * cos);
-	int newPosY = heroPos.second - int(dist * sin);
-	if (dist > 0.0) { // not collide with anything
-		hero.setPos(newPosX, newPosY);
-		heroPos = make_pair(newPosX, newPosY);
+	
+	// move back
+	if (dist > 0.0) {
+		double d = pow(heroSpeed.first*heroSpeed.first + heroSpeed.second*heroSpeed.second, 0.5);
+		double cos = heroSpeed.first / d;
+		double sin = heroSpeed.second / d;
+		int newPosX = heroPos.first - int(dist * cos);
+		int newPosY = heroPos.second - int(dist * sin);
+		if (dist > 0.0) { // not collide with anything
+			hero.setPos(newPosX, newPosY);
+			heroPos = make_pair(newPosX, newPosY);
+		}
 	}
 
 	// set hero status according to relationship with objects
-	int contactX = newPosX + Nodes_Hero[deepestPoint][0];
-	int contactY = newPosY + Nodes_Hero[deepestPoint][1];
-	/*
-	int borderX = nearbySquares[deepestBox].first * TILE_DIM; // left most border
-	int borderY = nearbySquares[deepestBox].second * TILE_DIM; // up most border
-
-	if (contactX == borderX-1) { // if hit wall
-		hero.hitVerticalWall(1);
-	}
-	else if (contactX == borderX + TILE_DIM) {
-		hero.hitVerticalWall(-1);
-	}
-	else {
-		hero.hitVerticalWall(0); // does not hit wall
-	}
-	if (contactY == borderY + TILE_DIM) { // hit wall
-		hero.setSpeedY(0);
-	}
-
-	// checks if on the ground
-	bool isOn = false;
-	for (int i = 2; i < 4; i++) {
-		int boxX = (newPosX + Borders[i][0]) / TILE_DIM + cameraX;
-		int boxY = (newPosY + Borders[i][1] + 2) / TILE_DIM + cameraY;
-		if(boxY >=0 && boxY < mapWidth && boxX >= 0 && boxX < mapWidth)
-			if (stageMap[boxY][boxX] > 0) 
-				isOn = true;
-	}
-	hero.onGround(isOn);
-	*/
-
 	if (isAgainstWall(0)) {
 		hero.setSpeedY(0);
 	}
@@ -195,9 +161,42 @@ void Map::collision_test() {
 	}
 }
 
+void Map::camera_move() {
+	heroPos = hero.getPos();
+	Speed heroSpeed = hero.getSpeed();
+
+	int relativeX = heroPos.first - cameraX;
+	int relativeY = heroPos.second - cameraY;
+
+	// direction x, moves with hero, stops at border
+	if (relativeX <= sceneWidth * TILE_DIM * 2 / 5 && heroSpeed.first < 0.0) {
+		cameraX += int(heroSpeed.first);
+		if (cameraX < TILE_DIM)
+			cameraX = TILE_DIM;
+	}
+	else if (relativeX >= sceneWidth * TILE_DIM * 3 / 5 && heroSpeed.first > 0.0) {
+		cameraX += int(heroSpeed.first);//heroPos.first - sceneWidth * TILE_DIM * 3 / 5;
+		if (cameraX > (mapWidth - sceneWidth - 1)*TILE_DIM)
+			cameraX = (mapWidth - sceneWidth - 1)*TILE_DIM;
+	}
+
+	// direction y, moves with hero, stops at border and camera blocks
+	if (relativeY <= sceneHeight * TILE_DIM * 3 / 7 && heroSpeed.second < 0.0) {
+		cameraY += int(heroSpeed.second);
+		if (cameraY < TILE_DIM)
+			cameraY = TILE_DIM;
+	}
+	else if (relativeY >= sceneHeight * TILE_DIM * 4 / 7 && heroSpeed.second > 0.0) {
+		cameraY += int(heroSpeed.second);//heroPos.second - sceneHeight * TILE_DIM * 3 / 5;
+		if (cameraY > (mapHeight - sceneHeight - 1)*TILE_DIM)
+			cameraY = (mapHeight - sceneHeight - 1)*TILE_DIM;
+	}
+}
+
 void Map::update() {
 	hero.update();
 	collision_test();
+	camera_move();
 }
 
 void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
@@ -205,20 +204,80 @@ void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 		SelectObject(hdc_loadbmp, background);
 		BitBlt(bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadbmp, 0, 0, SRCCOPY);
 	}
-	SelectObject(hdc_loadbmp, textures);
-	for (int y = 0; y < sceneHeight; y++) {
-		for (int x = 0; x < sceneWidth; x++) {
-			int tileId = stageMap[y + cameraY][x + cameraX];
+	/*SelectObject(hdc_loadbmp, textures);
+	
+	HDC mapBuffer = CreateCompatibleDC(bmp_buffer);
+	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, (sceneWidth+2)*TILE_DIM, (sceneHeight+2)*TILE_DIM);
+	SelectObject(mapBuffer, bmp_blank);
+
+	int startX = cameraX / TILE_DIM;
+	int startY = cameraY / TILE_DIM;
+	for (int y = -1; y <= sceneHeight; y++) {
+		for (int x = -1; x <= sceneWidth; x++) {
+			int xx = x + startX;
+			int yy = y + startY;
+			int tileId;
+			if (xx < 0 || xx >= mapWidth || yy < 0 || yy >= mapHeight) {
+				tileId = 1;
+			}
+			else {
+				tileId = stageMap[yy][xx];
+			}
+			int tileX = tileId / 10;
+			int tileY = tileId % 10;
 			if (tileId > 0) {
 				TransparentBlt(
-					bmp_buffer, x*TILE_DIM, y*TILE_DIM, TILE_DIM, TILE_DIM,
-					hdc_loadbmp, 0, tileId * TILE_DIM, TILE_DIM, TILE_DIM,
+					mapBuffer, (x+1)*TILE_DIM, (y+1)*TILE_DIM, TILE_DIM, TILE_DIM,
+					hdc_loadbmp, tileX * TILE_SRC_DIM, tileY * TILE_SRC_DIM, TILE_SRC_DIM, TILE_SRC_DIM,
 					RGB(255, 255, 255)
 				);
 			}
 		}
 	}
-	hero.render(bmp_buffer, hdc_loadbmp);
+	int x = cameraX - (startX - 1) * TILE_DIM;
+	int y = cameraY - (startY - 1) * TILE_DIM;
+	TransparentBlt(
+		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+		mapBuffer, x, y, WINDOW_WIDTH, WINDOW_HEIGHT,
+		RGB(255, 255, 255)
+	);
+	DeleteDC(mapBuffer);*/
+
+	if (mapNeedRefresh) {
+		render_map(hdc_loadbmp);
+		mapNeedRefresh = false;
+	}
+	TransparentBlt(
+		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+		mapBuffer, cameraX, cameraY, WINDOW_WIDTH, WINDOW_HEIGHT,
+		RGB(255, 255, 255)
+	);
+	hero.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
+}
+
+void Map::render_map(HDC hdc_loadbmp) {
+	SelectObject(hdc_loadbmp, textures);
+
+	if(mapBuffer == NULL)
+		mapBuffer = CreateCompatibleDC(hdc);
+	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, mapWidth*TILE_DIM, mapHeight*TILE_DIM);
+	SelectObject(mapBuffer, bmp_blank);
+
+	for (int y = 0; y < mapHeight; y++) {
+		for (int x = 0; x < mapWidth; x++) {
+			int tileId = stageMap[y][x];
+			int tileX = tileId / 10;
+			int tileY = tileId % 10;
+			if (tileId > 0) {
+				TransparentBlt(
+					mapBuffer, x*TILE_DIM, y*TILE_DIM, TILE_DIM, TILE_DIM,
+					hdc_loadbmp, tileX * TILE_SRC_DIM, tileY * TILE_SRC_DIM, TILE_SRC_DIM, TILE_SRC_DIM,
+					RGB(255, 255, 255)
+				);
+			}
+		}
+	}
+	DeleteObject(bmp_blank);
 }
 
 Map::~Map()
@@ -232,25 +291,24 @@ bool Map::isHeroOutOfBounds() {
 	int x2 = x1 + HERO_WIDTH;
 	int y2 = y1 + HERO_HEIGHT;
 
-	if (x2 < 0 || y2 < 0 || x1 > WINDOW_WIDTH || y1 > WINDOW_HEIGHT) {
+	if (x2 < 0 || y2 < 0 || x2 > mapWidth*TILE_DIM || y2 > mapHeight*TILE_DIM) {
 		return true;
 	}
 	return false;
 }
 
 int Map::whichBoundary() {
-	int x = heroPos.first + HERO_WIDTH / 2;
-	int y = heroPos.second + HERO_HEIGHT / 2;
-
+	int x = heroPos.first + HERO_WIDTH / 2 - cameraX;
+	int y = heroPos.second + HERO_HEIGHT / 2 - cameraY;
 
 	if (x <= 0 || x >= WINDOW_WIDTH || y <= 0 || y >= WINDOW_HEIGHT) {
-		int xx = x / TILE_DIM + cameraX;
+		int xx = (x+cameraX) / TILE_DIM;
 		if (xx < 0) 
 			xx = 0;
 		else if (xx >= mapWidth) 
 			xx = mapWidth - 1;
 
-		int yy = y / TILE_DIM + cameraY;
+		int yy = (y+cameraY) / TILE_DIM;
 		if (yy < 0) 
 			yy = 0;
 		else if (yy >= mapHeight) 
@@ -302,10 +360,10 @@ bool Map::isAgainstWall(int direction) {
 	for (unsigned int i = 0; i < borderNodes.size(); i++) {
 		int x = borderNodes[i].first;
 		int y = borderNodes[i].second;
-		int xx1 = x / TILE_DIM + cameraX;
-		int xx2 = (x + increment[direction][0]) / TILE_DIM + cameraX;
-		int yy1 = y / TILE_DIM + cameraY;
-		int yy2 = (y + increment[direction][1]) / TILE_DIM + cameraY;
+		int xx1 = x / TILE_DIM;
+		int xx2 = (x + increment[direction][0]) / TILE_DIM;
+		int yy1 = y / TILE_DIM;
+		int yy2 = (y + increment[direction][1]) / TILE_DIM;
 		
 		if (coordinateInMap(xx1, yy1) && coordinateInMap(xx2, yy2)) {
 			if (stageMap[yy1][xx1] == 0 && stageMap[yy2][xx2] > 0) {

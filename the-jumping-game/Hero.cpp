@@ -1,11 +1,13 @@
 #include "stdafx.h"
 #include "Hero.h"
 
-int Nodes_Hero[BORDER_POINT_NUM][2] = {{0,0},{HERO_WIDTH / 3, 0},{HERO_WIDTH * 2 / 3, 0},
-									{HERO_WIDTH-1,0},{HERO_WIDTH - 1, HERO_HEIGHT / 3} ,{HERO_WIDTH - 1, HERO_HEIGHT * 2 / 3},
-									{HERO_WIDTH - 1,HERO_HEIGHT - 1},{HERO_WIDTH *2 / 3, HERO_HEIGHT - 1} ,{HERO_WIDTH / 3, HERO_HEIGHT - 1},
-									{0,HERO_HEIGHT-1},{0,HERO_HEIGHT * 2 / 3} ,{0,HERO_HEIGHT / 3}};
-int Borders_Hero[4][BORDER_POINT_NUM / 4+1] = { {0,1,2,3}, {3,4,5,6},{6,7,8,9}, {9,10,11,0} };
+int Nodes_Hero[BORDER_POINT_NUM][2] = {
+	{0,0},{HERO_WIDTH / 5, 0},{HERO_WIDTH * 2 / 5, 0},{HERO_WIDTH * 3 / 5, 0},{HERO_WIDTH * 4 / 5, 0},
+	{HERO_WIDTH-1,0},{HERO_WIDTH - 1, HERO_HEIGHT / 5}, {HERO_WIDTH - 1, HERO_HEIGHT * 2 / 5},{HERO_WIDTH - 1, HERO_HEIGHT * 3 / 5},{HERO_WIDTH - 1, HERO_HEIGHT * 4 / 5},
+	{HERO_WIDTH - 1,HERO_HEIGHT - 1},{HERO_WIDTH * 4 / 5, HERO_HEIGHT - 1} ,{HERO_WIDTH * 3 / 5, HERO_HEIGHT - 1} ,{HERO_WIDTH *2 / 5, HERO_HEIGHT - 1} ,{HERO_WIDTH / 5, HERO_HEIGHT - 1},
+	{0,HERO_HEIGHT-1},{0,HERO_HEIGHT * 4 / 5} ,{0,HERO_HEIGHT * 3 / 5} ,{0,HERO_HEIGHT * 2 / 5} ,{0,HERO_HEIGHT / 5}
+};
+int Borders_Hero[4][BORDER_POINT_NUM / 4+1] = { {0,1,2,3,4,5}, {5,6,7,8,9,10},{10,11,12,13,14,15}, {15,16,17,18,19,0} };
 
 Hero::Hero()
 {
@@ -49,6 +51,11 @@ void Hero::hitVerticalWall(int _whatWall) {
 		speedX = 0.0;
 	}
 }
+
+void Hero::die(int how) {
+	
+}
+
 
 /* get status */
 std::vector<std::pair<int, int>> Hero::getBorderNodes(int _border) {
@@ -123,10 +130,10 @@ void Hero::update() {
 
 }
 
-void Hero::render(HDC bmp_buffer, HDC hdc_loadbmp) {
+void Hero::render(HDC bmp_buffer, HDC hdc_loadbmp, int cameraX, int cameraY) {
 	SelectObject(hdc_loadbmp, img);
 	TransparentBlt(
-		bmp_buffer, posX, posY,
+		bmp_buffer, posX-cameraX, posY-cameraY,
 		width, height,
 		hdc_loadbmp, 0, 0, HERO_BMP_WIDTH, HERO_BMP_HEIGHT,
 		RGB(255, 255, 255)

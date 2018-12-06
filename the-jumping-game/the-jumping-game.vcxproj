@@ -175,15 +175,18 @@
     <ResourceCompile Include="the-jumping-game.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\resources\astronaut.bmp" />
     <Image Include="..\resources\bg_forest.bmp" />
-    <Image Include="..\resources\bitmap1.bmp" />
+    <Image Include="..\resources\bitmap8.bmp" />
+    <Image Include="..\resources\bkg_map.bmp" />
+    <Image Include="..\resources\bkg_menu.bmp" />
+    <Image Include="..\resources\btn_back.bmp" />
+    <Image Include="..\resources\btn_continue.bmp" />
+    <Image Include="..\resources\btn_play.bmp" />
+    <Image Include="..\resources\btn_restart.bmp" />
+    <Image Include="..\resources\btn_tutorial.bmp" />
     <Image Include="..\resources\hero.bmp" />
-    <Image Include="..\resources\obj_element.bmp" />
-    <Image Include="..\resources\space_bkg.bmp" />
     <Image Include="..\resources\start.bmp" />
     <Image Include="..\resources\texture_1.bmp" />
-    <Image Include="..\resources\texture_2.bmp" />
     <Image Include="small.ico" />
     <Image Include="the-jumping-game.ico" />
   </ItemGroup>

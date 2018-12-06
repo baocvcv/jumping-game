@@ -15,7 +15,8 @@ public:
 
 	// events
 	void eventMouseMove(int x, int y);
-	int eventMouseLeftClick(int x, int y);
+	int eventMouseLeftDown(int x, int y);
+	int eventMouseLeftUp(int x, int y);
 
 	void render(HDC bmp_buffer, HDC hdc_loadbmp);
 	
