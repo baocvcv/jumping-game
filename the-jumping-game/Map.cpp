@@ -106,45 +106,48 @@ int Map::collision_test() {
 		break;
 	}*/
 
-	//test if collides
-	std::vector<Coordinates> border = hero.getBorderNodes(4);
-	std::vector<Coordinates> nearbySquares; // relative to camera
 	Speed heroSpeed = hero.getSpeed();
-	std::map<int, bool> touchingTiles; // record what tiles have been touched
 
-	double dist = 0.0;
-	for (unsigned int j = 0; j < border.size(); j++) {
-		int xx = border[j].first/TILE_DIM;
-		int yy = border[j].second/TILE_DIM;
-		if (xx >= 0 && xx < mapWidth && yy >= 0 && yy < mapHeight) {
-			if (stageMap[yy][xx] > 0){
-				touchingTiles[stageMap[yy][xx]] = true;
-				int x = border[j].first % TILE_DIM;
-				int y = border[j].second % TILE_DIM;
-				double d = calcDist(std::make_pair(x, y), heroSpeed);
-				if (d > dist) {
-					dist = d;
+	//test if collides
+	bool isColliding;
+	double dist;
+	std::map<int, bool> touchingTiles; // record what tiles have been touched
+	do {
+		dist = 0.0;
+		std::vector<Coordinates> border = hero.getBorderNodes(4);
+		std::vector<Coordinates> nearbySquares; // relative to camera
+		touchingTiles.clear(); // clear out all the contents
+		isColliding = false;
+		for (unsigned int j = 0; j < border.size(); j++) {
+			int xx = border[j].first / TILE_DIM;
+			int yy = border[j].second / TILE_DIM;
+			if (xx >= 0 && xx < mapWidth && yy >= 0 && yy < mapHeight) {
+				if (stageMap[yy][xx] > 0) {
+					touchingTiles[stageMap[yy][xx]] = true;
+					isColliding = true;
+					int x = border[j].first % TILE_DIM;
+					int y = border[j].second % TILE_DIM;
+					double d = calcDist(std::make_pair(x, y), heroSpeed);
+					if (d > dist) {
+						dist = d;
+					}
 				}
 			}
 		}
-	}
-
-	
-
-	// move back
-	if (dist > 0.0) {
-		double d = pow(heroSpeed.first*heroSpeed.first + heroSpeed.second*heroSpeed.second, 0.5);
-		double cos = heroSpeed.first / d;
-		double sin = heroSpeed.second / d;
-		int newPosX = heroPos.first - int(dist * cos);
-		int newPosY = heroPos.second - int(dist * sin);
-		if (dist > 0.0) { // not collide with anything
-			hero.setPos(newPosX, newPosY);
-			heroPos = make_pair(newPosX, newPosY);
+		// move back
+		if (dist > 0.001) {
+			double d = pow(heroSpeed.first*heroSpeed.first + heroSpeed.second*heroSpeed.second, 0.5);
+			double cos = heroSpeed.first / d;
+			double sin = heroSpeed.second / d;
+			int newPosX = int(heroPos.first - dist * cos);
+			int newPosY = int(heroPos.second - dist * sin);
+			if (dist > 0.0) { // not collide with anything
+				hero.setPos(newPosX, newPosY);
+				heroPos = make_pair(newPosX, newPosY);
+			}
 		}
-	}
-
-
+	} while (isColliding);
+	
 	// set hero status according to relationship with objects
 	vector<int> res = isAgainstWall(0);
 	if (res.size() > 0) { //up
@@ -278,10 +281,9 @@ void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 		render_map(hdc_loadbmp);
 		mapNeedRefresh = false;
 	}
-	TransparentBlt(
+	BitBlt(
 		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-		mapBuffer, cameraX, cameraY, WINDOW_WIDTH, WINDOW_HEIGHT,
-		RGB(255, 255, 255)
+		mapBuffer, cameraX, cameraY, SRCPAINT
 	);
 	hero.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
 }

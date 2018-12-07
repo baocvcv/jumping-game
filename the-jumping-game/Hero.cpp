@@ -33,14 +33,18 @@ void Hero::reset(int x, int y) {
 	setPos(x, y);
 	setSpeed(0, 0);
 
+	hasCharged = false;
 	inAir = true;
 	whatWall = 0;
+	facingRight = true;
 }
 
 void Hero::onGround(bool isOn) {
 	if (isOn) {
 		speedY = 0.0;
 		inAir = false;
+		if(!isCharging)
+			hasCharged = false;
 	}
 	else {
 		inAir = true;
@@ -53,11 +57,6 @@ void Hero::hitVerticalWall(int _whatWall) {
 		speedX = 0.0;
 	}
 }
-
-void Hero::die(int how) {
-	
-}
-
 
 /* get status */
 std::vector<std::pair<int, int>> Hero::getBorderNodes(int _border) {
@@ -84,41 +83,82 @@ void Hero::keyEvent(int _key, bool pressed) {
 				regularJump();
 			break;
 		case 'X':
-			if (!rope.isUsed) {
+			if (!hasCharged) {
 				Speed dir;
 				dir.first = 0.0; dir.second = 0.0;
-				if (key_status[VK_UP]) dir.second -= 1.0;
-				if (key_status[VK_DOWN]) dir.second += 1.0;
 				if (key_status[VK_LEFT]) dir.first -= 1.0;
 				if (key_status[VK_RIGHT]) dir.first += 1.0;
-				double d = DIST(dir.first, dir.second);
-				dir.first /= d; dir.second /= d;
-				rope.useRope(dir);
+				if (key_status[VK_UP]) dir.second -= 1.0;
+				if (key_status[VK_DOWN]) dir.second += 1.0;
+				if (!key_status[VK_LEFT] && !key_status[VK_RIGHT] && !key_status[VK_UP] && !key_status[VK_DOWN]) {
+					dir.first = 1.0;
+					dir.second = 0.0;
+				}
+				if (abs(dir.second) < 0.1 && abs(dir.first) < 0.1) break;
+				charge(dir);
 			}
 		}
 	}
 }
 
+void Hero::charge(Speed _dir) {
+	chargeDir = _dir;
+	hasCharged = true;
+	isCharging = true;
+	chargeFrame = 0;
+	speedX = HERO_CHARGE_SPEED * chargeDir.first;
+	speedY = HERO_CHARGE_SPEED * chargeDir.second;
+	if (chargeDir.second < 0.0)
+		inAir = true;
+}
+void Hero::die(int how) {
+
+}
+
+
 void Hero::update() {
-	// speed
+	// change direction faced
+	if (speedX > 0.0) facingRight = true;
+	else if (speedX < 0.0) facingRight = false;
+
+	if (isCharging) {
+		// charge
+		speedX -= HERO_CHARGE_ACCEL * chargeDir.first;
+		speedY -= HERO_CHARGE_ACCEL * chargeDir.second;
+		if (speedX * chargeDir.first < 0) speedX = 0;
+		if (speedY * chargeDir.second < 0) speedY = 0;
+		chargeFrame++;
+		if (chargeFrame > HERO_CHARGE_FRAME) {
+			stopCharge();
+		}
+	}
+
+	// speed Y
 	if (inAir) {
-		speedY += HERO_GRAVITY;
-		if (speedY >= HERO_SPEED_Y) speedY = HERO_SPEED_Y;
+		if (!isCharging) {
+			speedY += HERO_GRAVITY;
+			if (speedY >= HERO_SPEED_Y) speedY = HERO_SPEED_Y;
+		}
 	}
 	else speedY = 0;
 
-	if (key_status[VK_LEFT] && !key_status[VK_RIGHT] && speedX > -HERO_SPEED_X) {
-		speedX -= HERO_ACCELX; // press left
+	if (!isCharging) {
+		// speed X
+		if (key_status[VK_LEFT] && !key_status[VK_RIGHT] && speedX > -HERO_SPEED_X) {
+			speedX -= HERO_ACCELX; // press left
+		}
+		else if (!key_status[VK_LEFT] && key_status[VK_RIGHT] && speedX < HERO_SPEED_X) {
+			speedX += HERO_ACCELX; // press right key
+		}
+		else if (speedX > 0) {
+			speedX -= HERO_ACCELX;
+		}
+		else if (speedX < 0) {
+			speedX += HERO_ACCELX;
+		}
 	}
-	else if (!key_status[VK_LEFT] && key_status[VK_RIGHT] && speedX < HERO_SPEED_X) {
-		speedX += HERO_ACCELX; // press right key
-	}
-	else if (speedX > 0) {
-		speedX -= HERO_ACCELX;
-	}
-	else if (speedX < 0) {
-		speedX += HERO_ACCELX;
-	}
+
+	// hit wall
 	if (whatWall == 1 && speedX > 0) {
 		speedX = 0;
 	}

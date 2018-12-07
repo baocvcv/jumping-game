@@ -3,7 +3,7 @@
 #include "the-jumping-game.h"
 #include "Hero.h"
 
-#define TILE_DIM 20
+#define TILE_DIM 25
 #define TILE_SRC_DIM 40
 #define MAP_GRID_X	350
 #define MAP_GRID_Y	100
