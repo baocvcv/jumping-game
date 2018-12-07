@@ -157,10 +157,16 @@ int Map::collision_test() {
 
 	res = isAgainstWall(2);
 	if (res.size() > 0) { //down
-		hero.onGround(true);
+		hero.setOnGround(true);
+		if (isOnEdge()) {
+			hero.setOnEdge(true);
+		}
 		for (int i = 0; i < res.size(); i++) if (res[i] == 11 || res[i] == 12 || res[i] == 13) return 1;
 	}
-	else hero.onGround(false);
+	else {
+		hero.setOnGround(false);
+		hero.setOnEdge(false);
+	}
 
 	res = isAgainstWall(1);
 	if (res.size() > 0) { //right
@@ -406,6 +412,31 @@ std::vector<int> Map::isAgainstWall(int direction) {
 		}
 	}
 	return res;
+}
+
+bool Map::isOnEdge() {
+	vector<Coordinates> borderNodes = hero.getBorderNodes(2);
+	{
+		int i = 1;
+		int x = borderNodes[i].first; int y = borderNodes[i].second;
+		int xx1 = x / TILE_DIM; int yy1 = (y+1) / TILE_DIM;
+		if (coordinateInMap(xx1, yy1)) {
+			if (stageMap[yy1][xx1] == 0) {
+				return true;
+			}
+		}
+	}
+	{
+		int i = borderNodes.size() - 2;
+		int x = borderNodes[i].first; int y = borderNodes[i].second;
+		int xx1 = x / TILE_DIM; int yy1 = (y + 1) / TILE_DIM;
+		if (coordinateInMap(xx1, yy1)) {
+			if (stageMap[yy1][xx1] == 0) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 bool Map::coordinateInMap(int x, int y) {

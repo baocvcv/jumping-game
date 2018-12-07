@@ -89,6 +89,7 @@ private:
 	bool isPointInsideBox(Coordinates point, Coordinates box); // check if point in a box
 	double calcDist(Coordinates point, Speed direction); // distance according to speed
 	std::vector<int> isAgainstWall(int direction); // up right down left
+	bool isOnEdge(); // checks if hero is on edge
 
 	bool coordinateInMap(int x, int y); // checks if coordinates are in map data
 };

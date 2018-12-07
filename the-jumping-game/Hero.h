@@ -3,21 +3,20 @@
 #include "the-jumping-game.h"
 
 #define HERO_SPEED_X	6.0
-#define HERO_SPEED_Y	20.0
-#define HERO_JUMP_SPEED 20.0
+#define HERO_SPEED_Y	16.0
+#define HERO_JUMP_SPEED 16.0
 #define HERO_GRAVITY	1.0
-#define HERO_ACCELX		1.5
-#define HERO_CHARGE_SPEED 20.0
-#define HERO_CHARGE_FRAME 10
-#define HERO_CHARGE_ACCEL 1
+#define HERO_ACCELX		3.0
+#define HERO_CHARGE_SPEED 18.0
+#define HERO_CHARGE_ACCEL 0.5
 
-#define HERO_BMP_WIDTH  115
-#define HERO_BMP_HEIGHT 200
+#define HERO_BMP_WIDTH  58
+#define HERO_BMP_HEIGHT 100
 #define HERO_WIDTH		38
 #define HERO_HEIGHT		70
 #define BORDER_POINT_NUM 20
 
-#define HERO_NUM_ABILITIES 6
+#define HERO_NUM_ABILITIES 7
 
 extern int Nodes_Hero[BORDER_POINT_NUM][2];
 extern int Borders_Hero[4][BORDER_POINT_NUM / 4 + 1];
@@ -30,16 +29,23 @@ enum Talents {
 	WALK,
 	JUMP,
 	CHARGE,
+	CLIMB,
 	BORN,
 	DIE,
-};
+}; 
 
-struct Ability {
-	Talents id;
+class Ability {
+public:
+	Ability() {}
+	Ability(Talents _id, int _nF, bool _us, bool _isU, int fC, int as) : 
+		id(_id), nFrame(_nF), usable(_us), isUsing(_isU), frameCount(fC), animation_speed(as) {}
+
+	Talents id; // id*2 + facingright = frame.x
 	int nFrame;
 	bool usable;
 	bool isUsing;
 	int frameCount;
+	int animation_speed;
 };
 
 class Hero
@@ -56,8 +62,9 @@ public:
 	void setSpeedY(int vy) { speedY = vy * HERO_SPEED_Y; }
 	void die(int how);
 
-	void onGround(bool isOn); // set status to if on the ground
+	void setOnGround(bool isOn); // set status to if on the ground
 	void hitVerticalWall(int _whatWall); // hits vertical wall
+	void setOnEdge(bool isOn) { onEdge = isOn; }
 
 	// get status
 	Coordinates getPos() { return std::make_pair(posX, posY); }
@@ -67,7 +74,7 @@ public:
 	// move
 	void regularJump() { speedY = -HERO_JUMP_SPEED; inAir = true; } //HACK:: change back
 	void charge(Speed _dir); // charge
-	void stopCharge() { isCharging = false; }
+	void useAbility(int _id, int p1, int p2);
 
 	// animation
 	void setImg(HBITMAP _img) { img = _img; }
@@ -86,16 +93,14 @@ private:
 
 	bool inAir;
 	int whatWall;
-
-	Ability abilities[HERO_NUM_ABILITIES];
-	Talents status;
-
-	bool hasCharged;
-	bool isCharging;
-	int chargeFrame;
-	Speed chargeDir;
+	bool onEdge;
 
 	bool facingRight;
+
+	std::vector<Ability> Abilities;
+	Talents status;
+
+	Speed chargeDir;
 
 	double speedX, speedY;
 };
