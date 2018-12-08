@@ -21,8 +21,9 @@
 extern int Nodes_Hero[BORDER_POINT_NUM][2];
 extern int Borders_Hero[4][BORDER_POINT_NUM / 4 + 1];
 
-//TODO: animation of all kinds
-//TODO: hero ability
+//TODO: animation- climb
+//TODO: ability- climbing
+//TODO: sound effects
 
 enum Talents {
 	STAND,
@@ -70,6 +71,7 @@ public:
 	Coordinates getPos() { return std::make_pair(posX, posY); }
 	Speed getSpeed() { return std::make_pair(speedX, speedY); }
 	std::vector<Coordinates> getBorderNodes(int _border); // 0up 1right 2down 3left 4all
+	Talents getStatus() { return status; }
 
 	// move
 	void regularJump() { speedY = -HERO_JUMP_SPEED; inAir = true; } //HACK:: change back

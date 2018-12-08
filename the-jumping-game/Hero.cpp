@@ -19,9 +19,9 @@ int Hero_Abilities[HERO_NUM_ABILITIES][6] = {
 	{WALK, 10, 1, 0, 0, 4},
 	{JUMP, 10, 0, 0, 0, 3},
 	{CHARGE, 10, 1, 0, 0, 2},
-	{CLIMB, 9, 0, 0, 0, 4},
-	{BORN, 9, 1, 0, 0, 2},
-	{DIE, 9, 1, 0, 0, 2},
+	{CLIMB, 4, 0, 0, 0, 4},
+	{BORN, 7, 1, 0, 0, 4},
+	{DIE, 7, 1, 0, 0, 4},
 };
 
 Hero::Hero()
@@ -65,7 +65,7 @@ void Hero::reset(int x, int y) {
 			Hero_Abilities[i][5]);
 		Abilities.push_back(ability);
 	}
-	status = STAND;
+	useAbility(BORN,0,0);
 }
 
 void Hero::setOnGround(bool isOn) {
@@ -161,8 +161,16 @@ void Hero::useAbility(int _id, int p1, int p2) {
 	case CLIMB:
 		break;
 	case BORN:
+		status = BORN;
+		Abilities[BORN].isUsing = true;
+		Abilities[BORN].frameCount = 0;
 		break;
 	case DIE:
+		if (Abilities[DIE].usable) {
+			status = DIE;
+			Abilities[DIE].isUsing = true;
+			Abilities[DIE].frameCount = 0;
+		}
 		break;
 	}
 }
@@ -184,64 +192,66 @@ void Hero::die(int how) {
 
 
 void Hero::update() {
-	// change direction faced
-	if (speedX > 0.0) facingRight = true;
-	else if (speedX < 0.0) facingRight = false;
+	if (status != DIE) {
+		// change direction faced
+		if (speedX > 0.0) facingRight = true;
+		else if (speedX < 0.0) facingRight = false;
 
-	if (Abilities[CHARGE].isUsing) {
-		// charge
-		speedX -= HERO_CHARGE_ACCEL * chargeDir.first;
-		speedY -= HERO_CHARGE_ACCEL * chargeDir.second;
-		if (speedX * chargeDir.first < 0) speedX = 0.0;
-		if (speedY * chargeDir.second < 0) speedY = 0.0;
-		Abilities[CHARGE].frameCount++;
-		if (Abilities[CHARGE].frameCount > Abilities[CHARGE].nFrame*Abilities[CHARGE].animation_speed) {
-			Abilities[CHARGE].isUsing = false;
-			status = STAND;
+		if (Abilities[CHARGE].isUsing) {
+			// charge
+			speedX -= HERO_CHARGE_ACCEL * chargeDir.first;
+			speedY -= HERO_CHARGE_ACCEL * chargeDir.second;
+			if (speedX * chargeDir.first < 0) speedX = 0.0;
+			if (speedY * chargeDir.second < 0) speedY = 0.0;
+			Abilities[CHARGE].frameCount++;
+			if (Abilities[CHARGE].frameCount > Abilities[CHARGE].nFrame*Abilities[CHARGE].animation_speed) {
+				Abilities[CHARGE].isUsing = false;
+				status = STAND;
+			}
 		}
-	}
 
-	// speed Y
-	if (inAir) {
+		// speed Y
+		if (inAir) {
+			if (!Abilities[CHARGE].isUsing) {
+				speedY += HERO_GRAVITY;
+				if (speedY >= HERO_SPEED_Y) speedY = HERO_SPEED_Y;
+			}
+		}
+		else speedY = 0;
+
 		if (!Abilities[CHARGE].isUsing) {
-			speedY += HERO_GRAVITY;
-			if (speedY >= HERO_SPEED_Y) speedY = HERO_SPEED_Y;
+			// speed X
+			if (key_status[VK_LEFT] && !key_status[VK_RIGHT] && speedX > -HERO_SPEED_X) {
+				speedX -= HERO_ACCELX; // press left
+			}
+			else if (!key_status[VK_LEFT] && key_status[VK_RIGHT] && speedX < HERO_SPEED_X) {
+				speedX += HERO_ACCELX; // press right key
+			}
+			else if (speedX > 0) {
+				speedX -= HERO_ACCELX;
+				if (speedX < 0) speedX = 0.0;
+			}
+			else if (speedX < 0) {
+				speedX += HERO_ACCELX;
+				if (speedX > 0) speedX = 0.0;
+			}
 		}
-	}
-	else speedY = 0;
 
-	if (!Abilities[CHARGE].isUsing) {
-		// speed X
-		if (key_status[VK_LEFT] && !key_status[VK_RIGHT] && speedX > -HERO_SPEED_X) {
-			speedX -= HERO_ACCELX; // press left
+		// hit wall
+		if (whatWall == 1 && speedX > 0) {
+			speedX = 0;
 		}
-		else if (!key_status[VK_LEFT] && key_status[VK_RIGHT] && speedX < HERO_SPEED_X) {
-			speedX += HERO_ACCELX; // press right key
+		else if (whatWall == -1 && speedX < 0) {
+			speedX = 0;
 		}
-		else if (speedX > 0) {
-			speedX -= HERO_ACCELX;
-			if (speedX < 0) speedX = 0.0;
-		}
-		else if (speedX < 0) {
-			speedX += HERO_ACCELX;
-			if (speedX > 0) speedX = 0.0;
-		}
-	}
 
-	// hit wall
-	if (whatWall == 1 && speedX > 0) {
-		speedX = 0;
-	}
-	else if (whatWall == -1 && speedX < 0) {
-		speedX = 0;
-	}
+		// set status
+		if (status == WALK && abs(speedX) < 0.1 && abs(speedY) < 0.1) status = STAND;
+		else if (status == STAND && abs(speedX) > 0.1 && abs(speedY) < 0.1) status = WALK;
 
-	// set status
-	if (status == WALK && abs(speedX) < 0.1 && abs(speedY) < 0.1) status = STAND;
-	else if (status == STAND && abs(speedX) > 0.1 && abs(speedY) < 0.1) status = WALK;
-
-	// position
-	setPos(int(posX+speedX), int(posY+speedY));
+		// position
+		setPos(int(posX + speedX), int(posY + speedY));
+	}
 
 	// animation
 	switch (status) {
@@ -251,10 +261,18 @@ void Hero::update() {
 		Abilities[status].frameCount %= (Abilities[status].nFrame * Abilities[status].animation_speed);
 		break;
 	case JUMP:
+	case BORN:
 		Abilities[status].frameCount++;
 		if (Abilities[status].frameCount > Abilities[status].nFrame*Abilities[status].animation_speed) {
 			Abilities[status].isUsing = false;
 			status = STAND;
+		}
+		break;
+	case DIE:
+		Abilities[status].frameCount++;
+		if (Abilities[status].frameCount > Abilities[status].nFrame*Abilities[status].animation_speed) {
+			Abilities[status].isUsing = false;
+			status = BORN;
 		}
 		break;
 	}

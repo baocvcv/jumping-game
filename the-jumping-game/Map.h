@@ -38,6 +38,7 @@ extern int Perimiter[PERIMITER_SIZE][2];
 */
 
 //TODO: cui ruo brick
+//TODO: bgm
 
 class StartPos{
 public:

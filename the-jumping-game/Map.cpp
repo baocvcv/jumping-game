@@ -227,11 +227,18 @@ int Map::update() {
 	int action = collision_test();
 	camera_move();
 
+	Talents status;
 	switch (action) {
 	case 0:
 		return id;
 	case 1: // die
-		resetHero(true);
+		status = hero.getStatus();
+		if (status == BORN) {
+			resetHero(true);
+		}
+		else if (status != DIE) {
+			hero.useAbility(DIE, 0, 0);
+		}
 		return id;
 	case 2:
 		return MENU_SELECT_STAGE;
