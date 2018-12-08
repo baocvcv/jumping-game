@@ -21,7 +21,7 @@ int Hero_Abilities[HERO_NUM_ABILITIES][6] = {
 	{CHARGE, 10, 1, 0, 0, 2},
 	{CLIMB, 4, 0, 0, 0, 4},
 	{BORN, 7, 1, 0, 0, 4},
-	{DIE, 7, 1, 0, 0, 4},
+	{DIE, 7, 1, 0, 0, 3},
 };
 
 Hero::Hero()
@@ -31,13 +31,7 @@ Hero::Hero()
 	width = HERO_WIDTH;
 	height = HERO_HEIGHT;
 
-	reset(-1, -1);
-
-	/*
-	Ability stand(STAND, 1, true, false, 0);
-	abilities.push_back(stand);
-	Ability walk(WALK, 9, true, false, 0);
-	abilities.push_back(walk);*/
+	//reset(-1, -1);
 }
 
 Hero::Hero(int _posX, int _posY, HBITMAP _img) {
@@ -133,6 +127,7 @@ void Hero::keyEvent(int _key, bool pressed) {
 }
 
 void Hero::useAbility(int _id, int p1, int p2) {
+	int error;
 	switch (Talents(_id)) {
 	case STAND:
 		break;
@@ -161,16 +156,16 @@ void Hero::useAbility(int _id, int p1, int p2) {
 	case CLIMB:
 		break;
 	case BORN:
+		error = mciSendString(TEXT("play BORN from 300 to 800"), NULL, 0, NULL);
 		status = BORN;
 		Abilities[BORN].isUsing = true;
 		Abilities[BORN].frameCount = 0;
 		break;
 	case DIE:
-		if (Abilities[DIE].usable) {
-			status = DIE;
-			Abilities[DIE].isUsing = true;
-			Abilities[DIE].frameCount = 0;
-		}
+		error = mciSendString(TEXT("play BORN from 1000 to 1500"), NULL, 0, NULL);
+		status = DIE;
+		Abilities[DIE].isUsing = true;
+		Abilities[DIE].frameCount = 0;
 		break;
 	}
 }

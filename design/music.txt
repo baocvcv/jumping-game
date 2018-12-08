@@ -1,0 +1,14 @@
+﻿.h 加
+#include <mmsystem.h>
+#pragma comment(lib, "Winmm.lib")
+
+命令文档
+https://docs.microsoft.com/en-us/previous-versions//dd757161(v=vs.85)
+https://docs.microsoft.com/en-us/windows/desktop/Multimedia/open
+
+加载音乐文件
+mciSendString(
+		TEXT("open \"D:\\Documents\\Programming\\Projects\\the-jumping-game\\resources\\bgm.wav\" type waveaudio alias BGM"),
+		NULL, 0, NULL);
+
+mciSendString(TEXT("play BGM from 0 to 10000 notify"), NULL, 0, hWnd);

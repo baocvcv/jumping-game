@@ -70,6 +70,7 @@ void Game::mouseEvent(int _x, int _y, bool isClick) {
 						maps[sceneId].resetMap();
 					break;
 				}
+				PlayWav("BUTTON", "0", "", NULL);
 				switchScene(sceneId);
 				action_id = -1;
 			}
