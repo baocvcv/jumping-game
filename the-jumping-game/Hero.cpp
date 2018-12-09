@@ -48,6 +48,7 @@ void Hero::reset(int x, int y) {
 	whatWall = 0;
 	facingRight = true;
 	onEdge = false;
+	inAction = false;
 
 	for (int i = 0; i < HERO_NUM_ABILITIES; i++) {
 		Ability ability(
@@ -104,11 +105,12 @@ void Hero::keyEvent(int _key, bool pressed) {
 	if (pressed) {
 		switch (_key) {
 		case 'C':
+			inAction = true;
 			if (!inAir)
 				useAbility(JUMP, 0, 0);
-				//regularJump();
 			break;
 		case 'X':
+			inAction = true;
 			if (Abilities[CHARGE].usable) {
 				Coordinates dir;
 				if (key_status[VK_LEFT]) dir.first -= 1;
@@ -122,18 +124,20 @@ void Hero::keyEvent(int _key, bool pressed) {
 				if (dir.second==0 && dir.first==0) break;
 				useAbility(CHARGE, dir.first, dir.second);
 			}
+			break;
 		}
 	}
 }
 
 void Hero::useAbility(int _id, int p1, int p2) {
-	int error;
+	if (Abilities[DIE].isUsing && status == DIE) return;
 	switch (Talents(_id)) {
 	case STAND:
 		break;
 	case WALK:
 		break;
 	case JUMP:
+		PlayWav("JUMP", "0", "", NULL);
 		status = JUMP;
 		speedY = -HERO_JUMP_SPEED;
 		inAir = true;
@@ -142,6 +146,7 @@ void Hero::useAbility(int _id, int p1, int p2) {
 		Abilities[JUMP].frameCount = 0;
 		break;
 	case CHARGE:
+		PlayWav("CHARGE", "0", "", NULL);
 		status = CHARGE;
 		chargeDir.first = p1 / DIST(p1, p2);
 		chargeDir.second = p2 / DIST(p1, p2);
@@ -156,13 +161,13 @@ void Hero::useAbility(int _id, int p1, int p2) {
 	case CLIMB:
 		break;
 	case BORN:
-		error = mciSendString(TEXT("play BORN from 300 to 800"), NULL, 0, NULL);
+		PlayWav("BORN", "0", "", NULL);
 		status = BORN;
 		Abilities[BORN].isUsing = true;
 		Abilities[BORN].frameCount = 0;
 		break;
 	case DIE:
-		error = mciSendString(TEXT("play BORN from 1000 to 1500"), NULL, 0, NULL);
+		PlayWav("DIE", "0", "500", NULL);
 		status = DIE;
 		Abilities[DIE].isUsing = true;
 		Abilities[DIE].frameCount = 0;
@@ -216,11 +221,13 @@ void Hero::update() {
 
 		if (!Abilities[CHARGE].isUsing) {
 			// speed X
-			if (key_status[VK_LEFT] && !key_status[VK_RIGHT] && speedX > -HERO_SPEED_X) {
+			if (key_status[VK_LEFT] && !key_status[VK_RIGHT] && speedX >= -HERO_SPEED_X) {
 				speedX -= HERO_ACCELX; // press left
+				inAction = true;
 			}
-			else if (!key_status[VK_LEFT] && key_status[VK_RIGHT] && speedX < HERO_SPEED_X) {
+			else if (!key_status[VK_LEFT] && key_status[VK_RIGHT] && speedX <= HERO_SPEED_X) {
 				speedX += HERO_ACCELX; // press right key
+				inAction = true;
 			}
 			else if (speedX > 0) {
 				speedX -= HERO_ACCELX;
@@ -241,8 +248,10 @@ void Hero::update() {
 		}
 
 		// set status
-		if (status == WALK && abs(speedX) < 0.1 && abs(speedY) < 0.1) status = STAND;
-		else if (status == STAND && abs(speedX) > 0.1 && abs(speedY) < 0.1) status = WALK;
+		if (status == WALK && abs(speedX) < 0.1 && abs(speedY) < 0.1)
+			status = STAND;
+		else if (status == STAND && abs(speedX) > 0.1 && abs(speedY) < 0.1)
+			status = WALK;
 
 		// position
 		setPos(int(posX + speedX), int(posY + speedY));
@@ -293,13 +302,10 @@ void Hero::render(HDC bmp_buffer, HDC hdc_loadbmp, int cameraX, int cameraY) {
 		);
 	}*/
 	TransparentBlt(
-		bmp_buffer, posX-cameraX, posY-cameraY,
-		width, height,
+		bmp_buffer, posX-cameraX, posY-cameraY, width, height,
 		hdc_loadbmp, HERO_BMP_WIDTH*frameX, HERO_BMP_HEIGHT*frameY, HERO_BMP_WIDTH, HERO_BMP_HEIGHT,
 		RGB(255, 255, 255)
 	);
-	
-	//TransparentBlt(bmp_buffer, posX - cameraX, posY - cameraY,width, height,hdc_loadbmp, 0, 0, HERO_BMP_WIDTH, HERO_BMP_HEIGHT,RGB(255, 255, 255));
 }
 
 Hero::~Hero()

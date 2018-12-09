@@ -2,6 +2,7 @@
 
 #include "the-jumping-game.h"
 #include "Hero.h"
+#include "Shadow.h"
 
 #define TILE_DIM 25
 #define TILE_SRC_DIM 40
@@ -37,8 +38,7 @@ extern int Perimiter[PERIMITER_SIZE][2];
 
 */
 
-//TODO: cui ruo brick
-//TODO: bgm
+//TODO: cui ruo brick?
 
 class StartPos{
 public:
@@ -76,6 +76,10 @@ private:
 	int sceneWidth, sceneHeight; // num of tiles
 	int noStartPos;
 	std::vector<StartPos> startPosList; // stores all the starting positions available: starting pos is the block on which the hero stands
+
+	// enemy
+	// TODO: enemy
+	Shadow shadow;
 
 	// status
 	int cameraX, cameraY;

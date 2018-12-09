@@ -3,8 +3,8 @@
 #include "the-jumping-game.h"
 
 #define HERO_SPEED_X	6.0
-#define HERO_SPEED_Y	16.0
-#define HERO_JUMP_SPEED 16.0
+#define HERO_SPEED_Y	18.0
+#define HERO_JUMP_SPEED 18.0
 #define HERO_GRAVITY	1.0
 #define HERO_ACCELX		3.0
 #define HERO_CHARGE_SPEED 18.0
@@ -21,9 +21,8 @@
 extern int Nodes_Hero[BORDER_POINT_NUM][2];
 extern int Borders_Hero[4][BORDER_POINT_NUM / 4 + 1];
 
-//TODO: animation- climb
-//TODO: ability- climbing
-//TODO: sound effects
+//TODO: climbing?
+//HACK: sound effects, more?
 
 enum Talents {
 	STAND,
@@ -72,9 +71,10 @@ public:
 	Speed getSpeed() { return std::make_pair(speedX, speedY); }
 	std::vector<Coordinates> getBorderNodes(int _border); // 0up 1right 2down 3left 4all
 	Talents getStatus() { return status; }
+	bool hasMoved() { return inAction; }
 
 	// move
-	void regularJump() { speedY = -HERO_JUMP_SPEED; inAir = true; } //HACK:: change back
+	void regularJump() { speedY = -HERO_JUMP_SPEED; inAir = true; }
 	void charge(Speed _dir); // charge
 	void useAbility(int _id, int p1, int p2);
 
@@ -92,6 +92,7 @@ private:
 	HBITMAP img;
 	long posX, posY;
 	int width, height;
+	bool inAction;
 
 	bool inAir;
 	int whatWall;

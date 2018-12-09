@@ -38,7 +38,7 @@ Map::Map(int _id)
 	for (int i = 0; i < mapHeight; i++) {
 		stageMap[i] = new int[mapWidth];
 	}
-	for (int y = 0; y < mapHeight; y++){
+	for (int y = 0; y < mapHeight; y++) {
 		for (int x = 0; x < mapWidth; x++) {
 			mapfile >> stageMap[y][x];
 		}
@@ -80,6 +80,7 @@ void Map::resetHero(bool flag) {
 	int posY = startPosList[n].heroY*TILE_DIM - HERO_HEIGHT;
 	hero.reset(posX, posY);
 	heroPos = make_pair(posX, posY);
+	shadow.reset();
 }
 
 void Map::resetMap() {
@@ -96,15 +97,6 @@ int Map::collision_test() {
 	if (isHeroOutOfBounds()) {
 		return 1;
 	}
-	/*
-	switch (whichBoundary())
-	{
-	case 0:
-		resetHero();
-		return;
-	default:
-		break;
-	}*/
 
 	Speed heroSpeed = hero.getSpeed();
 
@@ -147,6 +139,15 @@ int Map::collision_test() {
 			}
 		}
 	} while (isColliding);
+
+	// test if caught by shadow
+	if (shadow.isChasing()) {
+		double distX = abs(heroPos.first + HERO_WIDTH / 2.0 - (shadow.getX()+SHADOW_WIDTH/2.0));
+		double distY = abs(heroPos.second+HERO_HEIGHT/2.0 - (shadow.getY()+SHADOW_HEIGHT/2.0));
+		if (distX < (HERO_WIDTH + SHADOW_WIDTH)/2.0 && distY < (HERO_HEIGHT + SHADOW_HEIGHT)/2.0) {
+			return 1;
+		}
+	}
 	
 	// set hero status according to relationship with objects
 	vector<int> res = isAgainstWall(0);
@@ -158,9 +159,8 @@ int Map::collision_test() {
 	res = isAgainstWall(2);
 	if (res.size() > 0) { //down
 		hero.setOnGround(true);
-		if (isOnEdge()) {
-			hero.setOnEdge(true);
-		}
+		if (isOnEdge()) hero.setOnEdge(true);
+		else hero.setOnEdge(false);
 		for (int i = 0; i < res.size(); i++) if (res[i] == 11 || res[i] == 12 || res[i] == 13) return 1;
 	}
 	else {
@@ -184,7 +184,10 @@ int Map::collision_test() {
 
 	// handle special tiles that have been touched
 	if (touchingTiles[39]) {} // some map animation
-	if (touchingTiles[22]) return 2; // go back to stage select
+	if (touchingTiles[22]) { // reached stage end
+		PlayWav("SUCCEED", "0", "", NULL);
+		return 2; // go back to stage select
+	}
 	if (touchingTiles[10]) return 1; // restart stage
 
 	return 0;
@@ -227,6 +230,9 @@ int Map::update() {
 	int action = collision_test();
 	camera_move();
 
+	if (!shadow.isChasing() && hero.hasMoved()) shadow.canChase();
+	if(action == 0) shadow.record(heroPos);
+
 	Talents status;
 	switch (action) {
 	case 0:
@@ -236,7 +242,7 @@ int Map::update() {
 		if (status == BORN) {
 			resetHero(true);
 		}
-		else if (status != DIE) {
+		else if (status != DIE) { // start dying and reset shadow
 			hero.useAbility(DIE, 0, 0);
 		}
 		return id;
@@ -251,44 +257,6 @@ void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 		SelectObject(hdc_loadbmp, background);
 		BitBlt(bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadbmp, 0, 0, SRCCOPY);
 	}
-	/*SelectObject(hdc_loadbmp, textures);
-	
-	HDC mapBuffer = CreateCompatibleDC(bmp_buffer);
-	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, (sceneWidth+2)*TILE_DIM, (sceneHeight+2)*TILE_DIM);
-	SelectObject(mapBuffer, bmp_blank);
-
-	int startX = cameraX / TILE_DIM;
-	int startY = cameraY / TILE_DIM;
-	for (int y = -1; y <= sceneHeight; y++) {
-		for (int x = -1; x <= sceneWidth; x++) {
-			int xx = x + startX;
-			int yy = y + startY;
-			int tileId;
-			if (xx < 0 || xx >= mapWidth || yy < 0 || yy >= mapHeight) {
-				tileId = 1;
-			}
-			else {
-				tileId = stageMap[yy][xx];
-			}
-			int tileX = tileId / 10;
-			int tileY = tileId % 10;
-			if (tileId > 0) {
-				TransparentBlt(
-					mapBuffer, (x+1)*TILE_DIM, (y+1)*TILE_DIM, TILE_DIM, TILE_DIM,
-					hdc_loadbmp, tileX * TILE_SRC_DIM, tileY * TILE_SRC_DIM, TILE_SRC_DIM, TILE_SRC_DIM,
-					RGB(255, 255, 255)
-				);
-			}
-		}
-	}
-	int x = cameraX - (startX - 1) * TILE_DIM;
-	int y = cameraY - (startY - 1) * TILE_DIM;
-	TransparentBlt(
-		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-		mapBuffer, x, y, WINDOW_WIDTH, WINDOW_HEIGHT,
-		RGB(255, 255, 255)
-	);
-	DeleteDC(mapBuffer);*/
 
 	if (mapNeedRefresh) {
 		render_map(hdc_loadbmp);
@@ -298,6 +266,8 @@ void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
 		mapBuffer, cameraX, cameraY, SRCPAINT
 	);
+
+	shadow.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
 	hero.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
 }
 
