@@ -129,5 +129,8 @@
     <Image Include="..\resources\devil.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="..\resources\success.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

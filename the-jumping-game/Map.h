@@ -10,6 +10,13 @@
 #define MAP_GRID_Y	100
 #define PERIMITER_SIZE 25
 
+#define BAD_BRICK_LAG 5
+#define BAD_BRICK_LIMIT 36
+
+#define SUCCESS_WIDTH 500
+#define SUCCESS_HEIGHT 300
+#define SUCCESS_TIME 50
+
 extern int Perimiter[PERIMITER_SIZE][2];
 /* Tile type
 0-9 normal
@@ -30,15 +37,8 @@ extern int Perimiter[PERIMITER_SIZE][2];
 	22 - stage end
 
 30-39 brick-once
-	39 down to 30
-
-40-49 
-
-
-
+	30 up to 35 is fine, 36-39 disappears
 */
-
-//TODO: cui ruo brick?
 
 class StartPos{
 public:
@@ -50,8 +50,9 @@ class Map
 {
 public:
 	Map();
-	Map(int _id);
+	Map(int _id, bool _isEnemyOn);
 	void setId(int _id) { id = _id; }
+	void setEnemy(bool _isEnemyOn) { isEnemyOn = _isEnemyOn; }
 
 	// manipulate hero
 	void keyEvent(int _key, bool pressed) { hero.keyEvent(_key, pressed); }
@@ -69,6 +70,7 @@ private:
 	Coordinates heroPos;
 	HBITMAP background;
 	HBITMAP textures;
+	HBITMAP success;
 	HDC mapBuffer;
 	bool mapRefresh;
 	int **stageMap;
@@ -76,14 +78,19 @@ private:
 	int sceneWidth, sceneHeight; // num of tiles
 	int noStartPos;
 	std::vector<StartPos> startPosList; // stores all the starting positions available: starting pos is the block on which the hero stands
+	std::map<Coordinates, int> badBricks;
 
 	// enemy
-	// TODO: enemy
 	Shadow shadow;
+	bool isEnemyOn;
+
+	// stage finish
+	int succeed_counter;
+	bool successOn;
 
 	// status
 	int cameraX, cameraY;
-	bool mapNeedRefresh;
+	int renderX, renderY;
 
 	int collision_test(); // test collide, returns actions
 	void camera_move(); // moves the camera with the hero

@@ -20,10 +20,11 @@ Map::Map() {
 
 }
 
-Map::Map(int _id)
+Map::Map(int _id, bool _isEnemyOn)
 {
-	// set id
+	// set id, enemy
 	id = _id;
+	isEnemyOn = _isEnemyOn;
 
 	// load map
 	std::ifstream mapfile;
@@ -41,6 +42,9 @@ Map::Map(int _id)
 	for (int y = 0; y < mapHeight; y++) {
 		for (int x = 0; x < mapWidth; x++) {
 			mapfile >> stageMap[y][x];
+			if (stageMap[y][x] == 30) {
+				badBricks[std::make_pair(x, y)] = 0;
+			}
 		}
 	}
 	mapfile.close();
@@ -55,9 +59,9 @@ Map::Map(int _id)
 	else {
 		background = NULL;
 	}
+	success = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_SUCCESS)); // success pic to be changed?
 
 	// set camera & load hero
-	mapNeedRefresh = true;
 	resetHero(false);
 }
 
@@ -80,7 +84,8 @@ void Map::resetHero(bool flag) {
 	int posY = startPosList[n].heroY*TILE_DIM - HERO_HEIGHT;
 	hero.reset(posX, posY);
 	heroPos = make_pair(posX, posY);
-	shadow.reset();
+	if(isEnemyOn) shadow.reset();
+	successOn = false;
 }
 
 void Map::resetMap() {
@@ -100,22 +105,45 @@ int Map::collision_test() {
 
 	Speed heroSpeed = hero.getSpeed();
 
+	// update bad bricks
+	std::map<Coordinates, int>::iterator it = badBricks.begin();
+	while (it != badBricks.end()) {
+		if ((*it).second > 0) {
+			(*it).second++;
+			if ((*it).second >= 10 * BAD_BRICK_LAG) {
+				(*it).second = 0;
+			}
+			int x = (*it).first.first;
+			int y = (*it).first.second;
+			stageMap[y][x] = 30 + (*it).second / BAD_BRICK_LAG;
+		}
+		it++;
+	}
+
 	//test if collides
 	bool isColliding;
 	double dist;
-	std::map<int, bool> touchingTiles; // record what tiles have been touched
 	do {
 		dist = 0.0;
 		std::vector<Coordinates> border = hero.getBorderNodes(4);
 		std::vector<Coordinates> nearbySquares; // relative to camera
-		touchingTiles.clear(); // clear out all the contents
 		isColliding = false;
 		for (unsigned int j = 0; j < border.size(); j++) {
 			int xx = border[j].first / TILE_DIM;
 			int yy = border[j].second / TILE_DIM;
 			if (xx >= 0 && xx < mapWidth && yy >= 0 && yy < mapHeight) {
-				if (stageMap[yy][xx] > 0) {
-					touchingTiles[stageMap[yy][xx]] = true;
+				int tile_num = stageMap[yy][xx];
+				if (tile_num > 0 && tile_num < BAD_BRICK_LIMIT) {
+					// handle special tiles that have been touched
+					switch (tile_num) {
+					case 22: // reached stage end
+						PlayWav("SUCCEED", "0", "", NULL);
+						successOn = true;
+						return 2; // go back to stage select
+					case 10: // dies
+						return 1; // reset
+					}
+
 					isColliding = true;
 					int x = border[j].first % TILE_DIM;
 					int y = border[j].second % TILE_DIM;
@@ -141,7 +169,7 @@ int Map::collision_test() {
 	} while (isColliding);
 
 	// test if caught by shadow
-	if (shadow.isChasing()) {
+	if (isEnemyOn && shadow.isChasing()) {
 		double distX = abs(heroPos.first + HERO_WIDTH / 2.0 - (shadow.getX()+SHADOW_WIDTH/2.0));
 		double distY = abs(heroPos.second+HERO_HEIGHT/2.0 - (shadow.getY()+SHADOW_HEIGHT/2.0));
 		if (distX < (HERO_WIDTH + SHADOW_WIDTH)/2.0 && distY < (HERO_HEIGHT + SHADOW_HEIGHT)/2.0) {
@@ -182,14 +210,6 @@ int Map::collision_test() {
 		else hero.hitVerticalWall(0);
 	}
 
-	// handle special tiles that have been touched
-	if (touchingTiles[39]) {} // some map animation
-	if (touchingTiles[22]) { // reached stage end
-		PlayWav("SUCCEED", "0", "", NULL);
-		return 2; // go back to stage select
-	}
-	if (touchingTiles[10]) return 1; // restart stage
-
 	return 0;
 }
 
@@ -226,30 +246,43 @@ void Map::camera_move() {
 }
 
 int Map::update() {
-	hero.update();
-	int action = collision_test();
-	camera_move();
-
-	if (!shadow.isChasing() && hero.hasMoved()) shadow.canChase();
-	if(action == 0) shadow.record(heroPos);
-
-	Talents status;
-	switch (action) {
-	case 0:
-		return id;
-	case 1: // die
-		status = hero.getStatus();
-		if (status == BORN) {
-			resetHero(true);
+	if (successOn) {
+		if (succeed_counter < SUCCESS_TIME) {
+			succeed_counter++;
+			return id;
 		}
-		else if (status != DIE) { // start dying and reset shadow
-			hero.useAbility(DIE, 0, 0);
+		else {
+			return MENU_SELECT_STAGE;
 		}
-		return id;
-	case 2:
-		return MENU_SELECT_STAGE;
 	}
-	return id;
+	else {
+		hero.update();
+		int action = collision_test();
+		camera_move();
+
+		if (isEnemyOn) {
+			if (!shadow.isChasing() && hero.hasMoved()) shadow.canChase();
+			if (action == 0) shadow.record(heroPos);
+		}
+
+		Talents status;
+		switch (action) {
+		case 0:
+			return id;
+		case 1: // die
+			status = hero.getStatus();
+			if (status == BORN) {
+				resetHero(true);
+			}
+			else if (status != DIE) { // start dying and reset shadow
+				hero.useAbility(DIE, 0, 0);
+			}
+			return id;
+		case 2: // success
+			succeed_counter = 0;
+		}
+		return id;
+	}
 }
 
 void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
@@ -258,17 +291,22 @@ void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 		BitBlt(bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadbmp, 0, 0, SRCCOPY);
 	}
 
-	if (mapNeedRefresh) {
-		render_map(hdc_loadbmp);
-		mapNeedRefresh = false;
-	}
+	render_map(hdc_loadbmp);
 	BitBlt(
 		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-		mapBuffer, cameraX, cameraY, SRCPAINT
+		mapBuffer, cameraX-renderX, cameraY-renderY, SRCPAINT
 	);
 
-	shadow.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
+	if(isEnemyOn) shadow.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
 	hero.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
+
+	if (successOn) {
+		SelectObject(hdc_loadbmp, success);
+		BitBlt(
+			bmp_buffer, (WINDOW_WIDTH-SUCCESS_WIDTH)/2, (WINDOW_HEIGHT-SUCCESS_HEIGHT)/2, SUCCESS_WIDTH, SUCCESS_HEIGHT,
+			hdc_loadbmp, 0, 0, SRCCOPY
+		);
+	}
 }
 
 void Map::render_map(HDC hdc_loadbmp) {
@@ -276,12 +314,14 @@ void Map::render_map(HDC hdc_loadbmp) {
 
 	if(mapBuffer == NULL)
 		mapBuffer = CreateCompatibleDC(hdc);
-	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, mapWidth*TILE_DIM, mapHeight*TILE_DIM);
+	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, (sceneWidth+2)*TILE_DIM, (sceneHeight+2)*TILE_DIM);
 	SelectObject(mapBuffer, bmp_blank);
 
-	for (int y = 0; y < mapHeight; y++) {
-		for (int x = 0; x < mapWidth; x++) {
-			int tileId = stageMap[y][x];
+	int x0 = cameraX / TILE_DIM; renderX = x0 * TILE_DIM;
+	int y0 = cameraY / TILE_DIM; renderY = y0 * TILE_DIM;
+	for (int y = 0; y <= sceneHeight; y++) {
+		for (int x = 0; x <= sceneWidth; x++) {
+			int tileId = stageMap[y+y0][x+x0];
 			int tileX = tileId / 10;
 			int tileY = tileId % 10;
 			if (tileId > 0) {
@@ -383,7 +423,20 @@ std::vector<int> Map::isAgainstWall(int direction) {
 		int yy2 = (y + increment[direction][1]) / TILE_DIM;
 		
 		if (coordinateInMap(xx1, yy1) && coordinateInMap(xx2, yy2)) {
-			if (stageMap[yy1][xx1] == 0 && stageMap[yy2][xx2] > 0) {
+			if (stageMap[yy1][xx1] == 0 && stageMap[yy2][xx2] > 0 && stageMap[yy2][xx2] < BAD_BRICK_LIMIT) {
+				if (direction == 2) { // if checking downwards
+					if (stageMap[yy2][xx2] == 30 && badBricks[std::make_pair(xx2, yy2)] == 0) { // if bad brick is not triggered
+						badBricks[std::make_pair(xx2, yy2)] = 1;
+						int i = 1;
+						while (stageMap[yy2][xx2 + i] == 30) { // trigger nearby bricks
+							badBricks[std::make_pair(xx2 + i, yy2)] = 1; i++;
+						}
+						i = 1;
+						while (stageMap[yy2][xx2 - i] == 30) { // trigger nearby bricks
+							badBricks[std::make_pair(xx2 - i, yy2)] = 1; i++;
+						}
+					}
+				}
 				res.push_back(stageMap[yy2][xx2]);
 			}
 		}

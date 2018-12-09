@@ -110,8 +110,14 @@ void Game::keyEvent(int key, bool pressed) {
 void Game::switchScene(int sceneId) {
 	// load map if next scene is a stage
 	if (sceneId >= 100 && maps.count(sceneId) == 0) {
-		Map mapi(sceneId);
-		maps[sceneId] = mapi;
+		if (sceneId == STAGE_0) {
+			Map mapi(sceneId, true);
+			maps[sceneId] = mapi;
+		}
+		else {
+			Map mapi(sceneId, false);
+			maps[sceneId] = mapi;
+		}
 	}
 
 	// start animation for menu (and maps)

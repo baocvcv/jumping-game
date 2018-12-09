@@ -191,6 +191,7 @@
     <Image Include="..\resources\devil.bmp" />
     <Image Include="..\resources\hero.bmp" />
     <Image Include="..\resources\start.bmp" />
+    <Image Include="..\resources\success.bmp" />
     <Image Include="..\resources\texture_1.bmp" />
     <Image Include="small.ico" />
     <Image Include="the-jumping-game.ico" />
