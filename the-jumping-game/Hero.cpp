@@ -27,40 +27,8 @@ int Hero_Abilities[HERO_NUM_ABILITIES][6] = {
 Hero::Hero()
 {
 	img = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_BITMAP_HERO));
-
 	width = HERO_WIDTH;
 	height = HERO_HEIGHT;
-
-	//reset(-1, -1);
-}
-
-Hero::Hero(int _posX, int _posY, HBITMAP _img) {
-	img = _img;
-	reset(_posX, _posY);
-}
-
- /* change status */
-void Hero::reset(int x, int y) {
-	setPos(x, y);
-	setSpeed(0, 0);
-
-	inAir = true;
-	whatWall = 0;
-	facingRight = true;
-	onEdge = false;
-	inAction = false;
-
-	for (int i = 0; i < HERO_NUM_ABILITIES; i++) {
-		Ability ability(
-			Talents(Hero_Abilities[i][0]),
-			Hero_Abilities[i][1],
-			Hero_Abilities[i][2] == 1,
-			Hero_Abilities[i][3] == 1,
-			Hero_Abilities[i][4],
-			Hero_Abilities[i][5]);
-		Abilities.push_back(ability);
-	}
-	useAbility(BORN,0,0);
 }
 
 void Hero::setOnGround(bool isOn) {
@@ -68,9 +36,10 @@ void Hero::setOnGround(bool isOn) {
 		speedY = 0.0;
 		inAir = false;
 		Abilities[JUMP].isUsing = false;
-		Abilities[JUMP].usable = true;
-		if (!Abilities[CHARGE].isUsing)
+		if (!Abilities[CHARGE].isUsing) {
+			Abilities[JUMP].usable = true;
 			Abilities[CHARGE].usable = true;
+		}
 	}
 	else {
 		inAir = true;
@@ -84,54 +53,33 @@ void Hero::hitVerticalWall(int _whatWall) {
 	}
 }
 
-/* get status */
-std::vector<std::pair<int, int>> Hero::getBorderNodes(int _border) {
-	std::vector<std::pair<int, int>> nodes;
-	if (_border == 4) {
-		for (int i = 0; i < BORDER_POINT_NUM; i++) {
-				nodes.push_back(std::make_pair(posX+Nodes_Hero[i][0], posY+Nodes_Hero[i][1]));
-			}
-	}
-	else {
-		for (int i = 0; i < BORDER_POINT_NUM / 4 + 1; i++) {
-			nodes.push_back(std::make_pair(posX + Nodes_Hero[Borders_Hero[_border][i]][0], posY + Nodes_Hero[Borders_Hero[_border][i]][1]));
-		}
-	}
-	return nodes;
-}
+/* change status */
+void Hero::reset(int x, int y) {
+	setPos(x, y);
+	setSpeed(0, 0);
 
-/* events */
-void Hero::keyEvent(int _key, bool pressed) {
-	if (pressed) {
-		switch (_key) {
-		case 'C':
-			inAction = true;
-			if (!inAir)
-				useAbility(JUMP, 0, 0);
-			break;
-		case 'X':
-			inAction = true;
-			if (Abilities[CHARGE].usable) {
-				Coordinates dir;
-				if (key_status[VK_LEFT]) dir.first -= 1;
-				if (key_status[VK_RIGHT]) dir.first += 1;
-				if (key_status[VK_UP]) dir.second -= 1;
-				if (key_status[VK_DOWN]) dir.second += 1;
-				if (!key_status[VK_LEFT] && !key_status[VK_RIGHT] && !key_status[VK_UP] && !key_status[VK_DOWN]) {
-					dir.first = facingRight ? 1 : -1;
-					dir.second = 0;
-				}
-				if (dir.second==0 && dir.first==0) break;
-				useAbility(CHARGE, dir.first, dir.second);
-			}
-			break;
-		}
+	inAir = true;
+	whatWall = 0;
+	facingRight = true;
+	onEdge = false;
+	inAction = false;
+
+	for (int i = 0; i < HERO_NUM_ABILITIES; i++) {
+		Ability ability(
+			Talent(Hero_Abilities[i][0]),
+			Hero_Abilities[i][1],
+			Hero_Abilities[i][2] == 1,
+			Hero_Abilities[i][3] == 1,
+			Hero_Abilities[i][4],
+			Hero_Abilities[i][5]);
+		Abilities.push_back(ability);
 	}
+	useAbility(BORN, 0, 0);
 }
 
 void Hero::useAbility(int _id, int p1, int p2) {
 	if (Abilities[DIE].isUsing && status == DIE) return;
-	switch (Talents(_id)) {
+	switch (Talent(_id)) {
 	case STAND:
 		break;
 	case WALK:
@@ -175,21 +123,51 @@ void Hero::useAbility(int _id, int p1, int p2) {
 	}
 }
 
-void Hero::charge(Speed _dir) {
-	status = CHARGE;
-	chargeDir = _dir;
-	Abilities[CHARGE].usable = false;
-	Abilities[CHARGE].isUsing = true;
-	Abilities[CHARGE].frameCount = 0;
-	speedX = HERO_CHARGE_SPEED * chargeDir.first;
-	speedY = HERO_CHARGE_SPEED * chargeDir.second;
-	if (chargeDir.second < 0.0)
-		inAir = true;
+/* get status */
+std::vector<std::pair<int, int>> Hero::getBorderNodes(int _border) {
+	std::vector<std::pair<int, int>> nodes;
+	if (_border == 4) {
+		for (int i = 0; i < BORDER_POINT_NUM; i++) {
+			nodes.push_back(std::make_pair(posX + Nodes_Hero[i][0], posY + Nodes_Hero[i][1]));
+		}
+	}
+	else {
+		for (int i = 0; i < BORDER_POINT_NUM / 4 + 1; i++) {
+			nodes.push_back(std::make_pair(posX + Nodes_Hero[Borders_Hero[_border][i]][0], posY + Nodes_Hero[Borders_Hero[_border][i]][1]));
+		}
+	}
+	return nodes;
 }
-void Hero::die(int how) {
 
+/* events */
+void Hero::keyEvent(int _key, bool pressed) {
+	if (pressed) {
+		switch (_key) {
+		case 'C':
+			inAction = true;
+			if (!inAir && Abilities[JUMP].usable)
+				useAbility(JUMP, 0, 0);
+			break;
+		case 'X':
+			inAction = true;
+			if (Abilities[CHARGE].usable) {
+				Coordinates dir;
+				if (key_status[VK_LEFT]) dir.first -= 1;
+				if (key_status[VK_RIGHT]) dir.first += 1;
+				if (key_status[VK_UP]) dir.second -= 1;
+				if (key_status[VK_DOWN]) dir.second += 1;
+				if (!key_status[VK_LEFT] && !key_status[VK_RIGHT] && !key_status[VK_UP] && !key_status[VK_DOWN]) {
+					dir.first = facingRight ? 1 : -1;
+					dir.second = 0;
+				}
+				if (dir.second == 0 && dir.first == 0) break;
+				useAbility(CHARGE, dir.first, dir.second);
+				Abilities[JUMP].usable = false;
+			}
+			break;
+		}
+	}
 }
-
 
 void Hero::update() {
 	if (status != DIE) {
@@ -206,6 +184,7 @@ void Hero::update() {
 			Abilities[CHARGE].frameCount++;
 			if (Abilities[CHARGE].frameCount > Abilities[CHARGE].nFrame*Abilities[CHARGE].animation_speed) {
 				Abilities[CHARGE].isUsing = false;
+				Abilities[JUMP].usable = true;
 				status = STAND;
 			}
 		}
@@ -310,5 +289,4 @@ void Hero::render(HDC bmp_buffer, HDC hdc_loadbmp, int cameraX, int cameraY) {
 
 Hero::~Hero()
 {
-	//DeleteObject(img);
 }

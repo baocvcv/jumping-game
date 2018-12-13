@@ -25,12 +25,11 @@ public:
 	void mouseMove(int x, int y);
 	void keyEvent(int key, bool pressed);
 	
-	int currentSceneId; // 0~99 is menu, 100-199 is game stage
-
-//private:
+private:
 	map<int, Menu> menus;
 	map<int, Map> maps;
 
+	int currentSceneId; // 0~99 is menu, 100-199 is game stage
 	int lastSceneId;
 	bool exitAnimationOn;
 

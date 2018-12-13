@@ -110,12 +110,12 @@ void Game::keyEvent(int key, bool pressed) {
 void Game::switchScene(int sceneId) {
 	// load map if next scene is a stage
 	if (sceneId >= 100 && maps.count(sceneId) == 0) {
-		if (sceneId == STAGE_0) {
-			Map mapi(sceneId, true);
+		if (sceneId < 110) {
+			Map mapi(sceneId, false);
 			maps[sceneId] = mapi;
 		}
 		else {
-			Map mapi(sceneId, false);
+			Map mapi(sceneId, true);
 			maps[sceneId] = mapi;
 		}
 	}

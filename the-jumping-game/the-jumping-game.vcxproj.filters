@@ -87,9 +87,6 @@
     <Image Include="..\resources\start.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\resources\bg_forest.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="..\resources\texture_1.bmp">
       <Filter>Resource Files</Filter>
     </Image>
@@ -114,9 +111,6 @@
     <Image Include="..\resources\btn_tutorial.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\resources\bitmap8.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="..\resources\bkg_map.bmp">
       <Filter>Resource Files</Filter>
     </Image>
@@ -130,6 +124,45 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="..\resources\success.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_start_tutorial.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\buttons_stg2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\buttons_stg10.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\buttons_stg11.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\buttons_stg12.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\btn_stg2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_menuhelp.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_select_stage.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_help.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_map2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_map3.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_map1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\resources\bkg_mapHelp.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

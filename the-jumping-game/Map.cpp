@@ -5,16 +5,7 @@
 #include <iostream>
 #include <cmath>
 
-#define DIST(x,y) (pow(x*x+y*y, 0.5))
-
-using namespace std;
-
-int Perimiter[PERIMITER_SIZE][2] = { {-2,-2}, {-2,-1}, {-2, 0}, {-2, 1}, {-2, 2},
-									 {-1,-2}, {-1,-1}, {-1, 0}, {-1, 1}, {-1, 2},
-									 { 0,-2}, { 0,-1}, { 0, 0}, { 0, 1}, { 0, 2},
-									 { 1,-2}, { 1,-1}, { 1, 0}, { 1, 1}, { 1, 2},
-									 { 2,-2}, { 2,-1}, { 2, 0}, { 2, 1}, { 2, 2} };
-
+#define DIST(x,y) (pow((x)*(x)+(y)*(y), 0.5))
 
 Map::Map() {
 
@@ -33,8 +24,11 @@ Map::Map(int _id, bool _isEnemyOn)
 	for (int i = 0; i < noStartPos; i++) {
 		StartPos pos;
 		mapfile >> pos.heroX >> pos.heroY >> pos.mapX >> pos.mapY;
+		pos.activated = false;
 		startPosList.push_back(pos);
 	}
+	startPosList[0].activated = true;
+
 	stageMap = new int*[mapHeight];
 	for (int i = 0; i < mapHeight; i++) {
 		stageMap[i] = new int[mapWidth];
@@ -44,6 +38,9 @@ Map::Map(int _id, bool _isEnemyOn)
 			mapfile >> stageMap[y][x];
 			if (stageMap[y][x] == 30) {
 				badBricks[std::make_pair(x, y)] = 0;
+			}
+			else if (stageMap[y][x] == 40) {
+				specialItems[std::make_pair(x, y)] = 0;
 			}
 		}
 	}
@@ -67,10 +64,10 @@ Map::Map(int _id, bool _isEnemyOn)
 
 void Map::resetHero(bool flag) {
 	int n = 0;
+	double dist = DIST(heroPos.first - startPosList[0].heroX*TILE_DIM, heroPos.second - startPosList[0].heroY*TILE_DIM + HERO_HEIGHT);
 	if (flag) {
 		heroPos = hero.getPos();
-		double dist = DIST(heroPos.first - startPosList[0].heroX*TILE_DIM, heroPos.second - startPosList[0].heroY*TILE_DIM+HERO_HEIGHT);
-		for (unsigned int i = 1; i < startPosList.size(); i++) {
+		for (unsigned int i = 1; i < startPosList.size() && startPosList[i].activated; i++) {
 			double tmp = DIST(heroPos.first - startPosList[i].heroX*TILE_DIM, heroPos.second - startPosList[i].heroY*TILE_DIM + HERO_HEIGHT);
 			if (tmp < dist) {
 				dist = tmp;
@@ -78,17 +75,37 @@ void Map::resetHero(bool flag) {
 			}
 		}
 	}
+	// reset the bricks
+	if (badBricks.size() != 0) {
+		std::map<Coordinates, int>::iterator it = badBricks.begin();
+		while (it != badBricks.end()) {
+			(*it).second = 0;
+			stageMap[(*it).first.second][(*it).first.first] = 30;
+			it++;
+		}
+	}
+	if (specialItems.size() != 0) {
+		std::map<Coordinates, int>::iterator it = specialItems.begin();
+		while (it != specialItems.end()) {
+			(*it).second = 0;
+			stageMap[(*it).first.second][(*it).first.first] = 40;
+			it++;
+		}
+	}
 	cameraX = startPosList[n].mapX * TILE_DIM; 
 	cameraY = startPosList[n].mapY * TILE_DIM;
 	int posX = startPosList[n].heroX*TILE_DIM;
 	int posY = startPosList[n].heroY*TILE_DIM - HERO_HEIGHT;
 	hero.reset(posX, posY);
-	heroPos = make_pair(posX, posY);
+	heroPos = std::make_pair(posX, posY);
 	if(isEnemyOn) shadow.reset();
 	successOn = false;
 }
 
 void Map::resetMap() {
+	for (unsigned int i = 1; i < startPosList.size(); i++) {
+		startPosList[i].activated = false;
+	}
 	resetHero(false);
 }
 
@@ -103,22 +120,7 @@ int Map::collision_test() {
 		return 1;
 	}
 
-	Speed heroSpeed = hero.getSpeed();
-
-	// update bad bricks
-	std::map<Coordinates, int>::iterator it = badBricks.begin();
-	while (it != badBricks.end()) {
-		if ((*it).second > 0) {
-			(*it).second++;
-			if ((*it).second >= 10 * BAD_BRICK_LAG) {
-				(*it).second = 0;
-			}
-			int x = (*it).first.first;
-			int y = (*it).first.second;
-			stageMap[y][x] = 30 + (*it).second / BAD_BRICK_LAG;
-		}
-		it++;
-	}
+	Speed heroSpeed = hero.getSpeed();	
 
 	//test if collides
 	bool isColliding;
@@ -152,6 +154,10 @@ int Map::collision_test() {
 						dist = d;
 					}
 				}
+				else if (tile_num == 40) {
+					hero.enableAbility(CHARGE);
+					specialItems[std::make_pair(xx, yy)] = BAD_BRICK_LAG;
+				}
 			}
 		}
 		// move back
@@ -163,7 +169,7 @@ int Map::collision_test() {
 			int newPosY = int(heroPos.second - dist * sin);
 			if (dist > 0.0) { // not collide with anything
 				hero.setPos(newPosX, newPosY);
-				heroPos = make_pair(newPosX, newPosY);
+				heroPos = std::make_pair(newPosX, newPosY);
 			}
 		}
 	} while (isColliding);
@@ -176,12 +182,20 @@ int Map::collision_test() {
 			return 1;
 		}
 	}
+
+	// activate startposition if any
+	for (unsigned int i = 1; i < startPosList.size(); i++) {
+		if (startPosList[i].activated) continue;
+		int sx = startPosList[i].heroX * TILE_DIM;
+		int hx = heroPos.first;
+		if (hx >= sx - HERO_WIDTH) startPosList[i].activated = true;
+	}
 	
 	// set hero status according to relationship with objects
-	vector<int> res = isAgainstWall(0);
+	std::vector<int> res = isAgainstWall(0);
 	if (res.size() > 0) { //up
 		hero.setSpeedY(0);
-		for (int i = 0; i < res.size(); i++) if (res[i] == 14 || res[i] == 12 || res[i] == 13) return 1;
+		for (unsigned int i = 0; i < res.size(); i++) if (res[i] == 14 || res[i] == 12 || res[i] == 13) return 1;
 	}
 
 	res = isAgainstWall(2);
@@ -189,7 +203,7 @@ int Map::collision_test() {
 		hero.setOnGround(true);
 		if (isOnEdge()) hero.setOnEdge(true);
 		else hero.setOnEdge(false);
-		for (int i = 0; i < res.size(); i++) if (res[i] == 11 || res[i] == 12 || res[i] == 13) return 1;
+		for (unsigned int i = 0; i < res.size(); i++) if (res[i] == 11 || res[i] == 12 || res[i] == 13 || res[i] == 10) return 1;
 	}
 	else {
 		hero.setOnGround(false);
@@ -199,13 +213,13 @@ int Map::collision_test() {
 	res = isAgainstWall(1);
 	if (res.size() > 0) { //right
 		hero.hitVerticalWall(1);
-		for (int i = 0; i < res.size(); i++) if (res[i] == 12 || res[i] == 11 || res[i] == 14) return 1;
+		for (unsigned int i = 0; i < res.size(); i++) if (res[i] == 12 || res[i] == 11 || res[i] == 14) return 1;
 	}
 	else {
 		res = isAgainstWall(3);
 		if (res.size() > 0) { //left
 			hero.hitVerticalWall(-1);
-			for (int i = 0; i < res.size(); i++) if (res[i] == 13 || res[i] == 11 || res[i] == 14) return 1;
+			for (unsigned int i = 0; i < res.size(); i++) if (res[i] == 13 || res[i] == 11 || res[i] == 14) return 1;
 		}
 		else hero.hitVerticalWall(0);
 	}
@@ -233,12 +247,12 @@ void Map::camera_move() {
 	}
 
 	// direction y, moves with hero, stops at border and camera blocks
-	if (relativeY <= sceneHeight * TILE_DIM * 1/6 && heroSpeed.second < 0.0) {
+	if (relativeY <= sceneHeight * TILE_DIM * 2/7 && heroSpeed.second < 0.0) {
 		cameraY += int(heroSpeed.second);
 		if (cameraY < TILE_DIM)
 			cameraY = TILE_DIM;
 	}
-	else if (relativeY >= sceneHeight * TILE_DIM * 5/6 && heroSpeed.second > 0.0) {
+	else if (relativeY >= sceneHeight * TILE_DIM * 5/7 && heroSpeed.second > 0.0) {
 		cameraY += int(heroSpeed.second);//heroPos.second - sceneHeight * TILE_DIM * 3 / 5;
 		if (cameraY > (mapHeight - sceneHeight - 1)*TILE_DIM)
 			cameraY = (mapHeight - sceneHeight - 1)*TILE_DIM;
@@ -252,10 +266,44 @@ int Map::update() {
 			return id;
 		}
 		else {
-			return MENU_SELECT_STAGE;
+			if(id == STAGE_HELP) return MENU_HELP;
+			else return MENU_SELECT_STAGE;
 		}
 	}
 	else {
+		// update bad bricks
+		if (badBricks.size() != 0) {
+			std::map<Coordinates, int>::iterator it = badBricks.begin();
+			while (it != badBricks.end()) {
+				if ((*it).second > 0) {
+					(*it).second++;
+					if ((*it).second >= 10 * BAD_BRICK_LAG) {
+						(*it).second = 0;
+					}
+					int x = (*it).first.first;
+					int y = (*it).first.second;
+					stageMap[y][x] = 30 + (*it).second / BAD_BRICK_LAG;
+				}
+				it++;
+			}
+		}
+		// update special bricks
+		if (specialItems.size() != 0) {
+			std::map<Coordinates, int>::iterator it = specialItems.begin();
+			while (it != specialItems.end()) {
+				if ((*it).second > 0) {
+					(*it).second++;
+					if ((*it).second >= 10 * BAD_BRICK_LAG) {
+						(*it).second = 0;
+					}
+					int x = (*it).first.first;
+					int y = (*it).first.second;
+					stageMap[y][x] = 40 + (*it).second / BAD_BRICK_LAG;
+				}
+				it++;
+			}
+		}
+
 		hero.update();
 		int action = collision_test();
 		camera_move();
@@ -265,7 +313,7 @@ int Map::update() {
 			if (action == 0) shadow.record(heroPos);
 		}
 
-		Talents status;
+		Talent status;
 		switch (action) {
 		case 0:
 			return id;
@@ -286,15 +334,10 @@ int Map::update() {
 }
 
 void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
-	if (background != NULL) {
-		SelectObject(hdc_loadbmp, background);
-		BitBlt(bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadbmp, 0, 0, SRCCOPY);
-	}
-
 	render_map(hdc_loadbmp);
 	BitBlt(
 		bmp_buffer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-		mapBuffer, cameraX-renderX, cameraY-renderY, SRCPAINT
+		mapBuffer, cameraX-renderX, cameraY-renderY, SRCCOPY
 	);
 
 	if(isEnemyOn) shadow.render(bmp_buffer, hdc_loadbmp, cameraX, cameraY);
@@ -310,15 +353,32 @@ void Map::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 }
 
 void Map::render_map(HDC hdc_loadbmp) {
-	SelectObject(hdc_loadbmp, textures);
-
-	if(mapBuffer == NULL)
-		mapBuffer = CreateCompatibleDC(hdc);
-	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, (sceneWidth+2)*TILE_DIM, (sceneHeight+2)*TILE_DIM);
-	SelectObject(mapBuffer, bmp_blank);
-
 	int x0 = cameraX / TILE_DIM; renderX = x0 * TILE_DIM;
 	int y0 = cameraY / TILE_DIM; renderY = y0 * TILE_DIM;
+	
+	// create buffer that holds the map
+	if (mapBuffer == NULL)
+		mapBuffer = CreateCompatibleDC(hdc);
+	HBITMAP bmp_blank = CreateCompatibleBitmap(hdc, (sceneWidth + 2)*TILE_DIM, (sceneHeight + 2)*TILE_DIM);
+	SelectObject(mapBuffer, bmp_blank);
+
+	// draw the background
+	if (background != NULL) {
+		SelectObject(hdc_loadbmp, background);
+		if (id == STAGE_HELP) {
+			TransparentBlt(
+				mapBuffer, 0, 0, WINDOW_WIDTH + TILE_DIM, WINDOW_HEIGHT + TILE_DIM,
+				hdc_loadbmp, renderX, renderY, WINDOW_WIDTH + TILE_DIM, WINDOW_HEIGHT + TILE_DIM,
+				SRCCOPY
+			);
+		}
+		else {
+			BitBlt(mapBuffer, cameraX - renderX, cameraY - renderY, WINDOW_WIDTH, WINDOW_HEIGHT, hdc_loadbmp, 0, 0, SRCCOPY);
+		}
+}
+
+	// draw the map
+	SelectObject(hdc_loadbmp, textures);
 	for (int y = 0; y <= sceneHeight; y++) {
 		for (int x = 0; x <= sceneWidth; x++) {
 			int tileId = stageMap[y+y0][x+x0];
@@ -410,9 +470,9 @@ double Map::calcDist(Coordinates point, Speed direction) {
 }
 
 std::vector<int> Map::isAgainstWall(int direction) {
-	vector<Coordinates> borderNodes = hero.getBorderNodes(direction);
+	std::vector<Coordinates> borderNodes = hero.getBorderNodes(direction);
 	int increment[4][2] = { {0,-1},{1,0},{0,1},{-1,0} };
-	vector<int> res;
+	std::vector<int> res;
 
 	for (unsigned int i = 0; i < borderNodes.size(); i++) {
 		int x = borderNodes[i].first;
@@ -445,7 +505,7 @@ std::vector<int> Map::isAgainstWall(int direction) {
 }
 
 bool Map::isOnEdge() {
-	vector<Coordinates> borderNodes = hero.getBorderNodes(2);
+	std::vector<Coordinates> borderNodes = hero.getBorderNodes(2);
 	{
 		int i = 1;
 		int x = borderNodes[i].first; int y = borderNodes[i].second;

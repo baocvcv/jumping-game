@@ -13,6 +13,7 @@ Button::Button(int _id , HBITMAP _bmp_Button)
 	isVisible = false;
 	isHoveredOn = false;
 	isAnimated = false;
+	isClicked = false;
 }
 
 bool Button::isHovered(int mouseX, int mouseY) {
@@ -50,15 +51,15 @@ void Button::render(HDC bmp_buffer, HDC hdc_loadbmp) {
 			x = posX - (posX - fromX) * frame_count / totalFrames;
 			y = posY - (posY - fromY) * frame_count / totalFrames;
 			double r = 1.0 - (1.0 - ratioStart) * frame_count / totalFrames;
-			wid = width * r;
-			hei = height * r;
+			wid = int(width * r);
+			hei = int(height * r);
 		}
 		else {
 			x = fromX + (posX - fromX) * frame_count / totalFrames;
 			y = fromY + (posY - fromY) * frame_count / totalFrames;
 			double r = ratioStart + (1.0 - ratioStart) * frame_count / totalFrames;
-			wid = width * r;
-			hei = height * r;
+			wid = int(width * r);
+			hei = int(height * r);
 		}
 		frame_count++;
 		if (frame_count > totalFrames) {
